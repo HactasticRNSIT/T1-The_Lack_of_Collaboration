@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - kalaSetu</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Import Supabase via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div class="background-overlay"></div>
+
+    <div class="main-container">
+        <div class="brand-header">
+            <h1 class="brand-title">kalaSetu</h1>
+            <p class="brand-subtitle">Join the Cultural Collaboration</p>
+        </div>
+
+        <div class="auth-card">
+            <h2>Create Your Account</h2>
+            <div class="input-group">
+                <label for="signup-name">Full Name</label>
+                <input type="text" id="signup-name" placeholder="Enter your name" required />
+            </div>
+            <div class="input-group">
+                <label for="signup-email">Email</label>
+                <input type="email" id="signup-email" placeholder="Enter your email" required />
+            </div>
+            <div class="input-group">
+                <label for="signup-password">Password</label>
+                <input type="password" id="signup-password" placeholder="Create a password" required />
+            </div>
+            <button id="signup-btn" class="primary-btn">Sign Up</button>
+            
+            <!-- Link to the separate login page -->
+            <p class="switch-form">Already have an account? <a href="login.html">Log In</a></p>
+            
+            <p id="signup-message" class="status-message"></p>
+        </div>
+    </div>
+
+    <!-- Import our custom JS files -->
+    <script src="supabase-client.js"></script>
+    <script src="auth.js"></script>
+</body>
+</html>
