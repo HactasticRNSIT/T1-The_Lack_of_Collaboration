@@ -1,0 +1,20 @@
+# Environment variables
+.env
+.env.*
+
+# Supabase local development
+.supabase/
+
+# Supabase generated types/config
+supabase/.temp/
+supabase/config.toml
+
+# Python virtual environment
+venv/
+__pycache__/
+*.pyc
+
+# Django
+db.sqlite3
+media/
+staticfiles/
