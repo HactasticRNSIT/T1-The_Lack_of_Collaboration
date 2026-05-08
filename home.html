@@ -1,0 +1,1637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>KalaSetu — Cultural Preservation Ecosystem</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<script src="auth.js"></script>
+<script src = "supabase-client.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;1,9..144,300;1,9..144,500&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<style>
+:root{
+  --ink:#0c0e12;
+  --ink2:#1e2330;
+  --ink3:#2d3448;
+  --mist:#f5f2ed;
+  --mist2:#ede9e2;
+  --mist3:#e0dbd2;
+  --gold:#c4973a;
+  --gold2:#e8b84b;
+  --ember:#c45b3a;
+  --sage:#3a7c5c;
+  --sky:#3a6bc4;
+  --cream:#faf8f4;
+  --text:#0c0e12;
+  --text2:#4a5165;
+  --text3:#8891a8;
+  --border:rgba(12,14,18,.09);
+  --border2:rgba(12,14,18,.16);
+  --card:rgba(255,255,255,.72);
+  --surface:rgba(255,255,255,.45);
+  --sidebar-w:268px;
+  --top-h:60px;
+  --ease:cubic-bezier(.22,1,.36,1);
+  --ease2:cubic-bezier(.4,0,.2,1);
+}
+.dark{
+  --mist:#0c0e12;
+  --mist2:#141720;
+  --mist3:#1c2030;
+  --cream:#111420;
+  --text:#e8ead0;
+  --text2:#9aa0b8;
+  --text3:#5a6280;
+  --border:rgba(232,234,208,.07);
+  --border2:rgba(232,234,208,.13);
+  --card:rgba(28,32,48,.8);
+  --surface:rgba(28,32,48,.55);
+  --gold:#e8b84b;
+  --gold2:#f2cc6e;
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+html{font-size:15px;-webkit-font-smoothing:antialiased}
+body{font-family:'Outfit',sans-serif;background:var(--mist);color:var(--text);min-height:100vh;overflow-x:hidden;transition:background .35s,color .35s}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px}
+
+/* LAYOUT */
+.app-shell{display:flex;min-height:100vh}
+.sidebar{
+  width:var(--sidebar-w);position:fixed;top:0;left:0;height:100vh;
+  background:var(--cream);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;z-index:200;
+  transition:transform .38s var(--ease),background .35s;
+}
+.main-area{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh;transition:margin .38s var(--ease)}
+.topbar{
+  height:var(--top-h);background:var(--cream);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:12px;padding:0 24px;
+  position:sticky;top:0;z-index:100;backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);transition:background .35s;
+}
+.content{flex:1;padding:28px;padding-bottom:64px;overflow-x:hidden}
+
+/* SIDEBAR PARTS */
+.sb-logo{padding:22px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;cursor:pointer}
+.sb-logo-mark{
+  width:36px;height:36px;border-radius:9px;
+  background:linear-gradient(145deg,var(--gold),var(--ember));
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  font-family:'Fraunces',serif;font-weight:700;font-size:17px;color:#fff;
+  letter-spacing:-.5px;box-shadow:0 3px 12px rgba(196,151,58,.3);
+}
+.sb-logo-text{font-family:'Fraunces',serif;font-weight:500;font-size:16px;color:var(--text);letter-spacing:-.3px}
+.sb-logo-sub{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;letter-spacing:.8px;text-transform:uppercase;margin-top:1px}
+
+.sb-nav{flex:1;overflow-y:auto;padding:14px 0}
+.sb-section-label{font-size:10px;color:var(--text3);letter-spacing:1.4px;text-transform:uppercase;font-family:'DM Mono',monospace;padding:8px 20px 4px}
+.sb-item{
+  display:flex;align-items:center;gap:10px;padding:9px 16px 9px 20px;
+  cursor:pointer;color:var(--text2);font-size:13.5px;font-weight:500;
+  transition:all .2s var(--ease2);border-left:2.5px solid transparent;
+  position:relative;
+}
+.sb-item:hover{background:var(--surface);color:var(--text)}
+.sb-item.active{color:var(--gold);border-left-color:var(--gold);background:rgba(196,151,58,.06)}
+.sb-icon{font-size:17px;width:20px;text-align:center;flex-shrink:0;transition:transform .2s}
+.sb-item:hover .sb-icon{transform:scale(1.1)}
+.sb-badge{margin-left:auto;background:var(--ember);color:#fff;font-size:10px;padding:2px 7px;border-radius:99px;font-weight:600;font-family:'DM Mono',monospace}
+
+.sb-user{padding:14px 20px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;cursor:pointer}
+.sb-user:hover .sb-uname{color:var(--gold)}
+.sb-avatar{width:34px;height:34px;border-radius:50%;object-fit:cover;border:2px solid var(--gold);flex-shrink:0;background:linear-gradient(135deg,var(--gold),var(--ember));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff}
+.sb-uname{font-size:13px;font-weight:600;color:var(--text);transition:color .2s}
+.sb-urole{font-size:11px;color:var(--text3)}
+
+/* TOPBAR */
+.tb-title{font-family:'Fraunces',serif;font-weight:500;font-size:17px;letter-spacing:-.3px;color:var(--text)}
+.search-wrap{flex:1;max-width:400px;margin:0 auto;position:relative}
+.search-wrap input{
+  width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:99px;
+  padding:7px 14px 7px 36px;font-family:'Outfit',sans-serif;font-size:13.5px;color:var(--text);
+  outline:none;transition:all .25s;
+}
+.search-wrap input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(196,151,58,.12);background:var(--card)}
+.search-wrap input::placeholder{color:var(--text3)}
+.search-icon-pos{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:15px;color:var(--text3);pointer-events:none}
+.tb-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
+.icon-btn{
+  width:36px;height:36px;border-radius:9px;background:var(--surface);
+  border:1px solid var(--border);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all .2s;color:var(--text2);font-size:16px;position:relative;
+}
+.icon-btn:hover{background:var(--card);border-color:var(--border2);color:var(--text)}
+.dot-badge{position:absolute;top:7px;right:7px;width:7px;height:7px;background:var(--ember);border-radius:50%;border:2px solid var(--cream)}
+
+/* PAGES */
+.page{display:none;animation:fadeUp .38s var(--ease) both}
+.page.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:9px;font-size:13px;font-weight:600;font-family:'Outfit',sans-serif;cursor:pointer;border:none;transition:all .22s var(--ease2);white-space:nowrap}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--ember));color:#fff;box-shadow:0 3px 12px rgba(196,151,58,.25)}
+.btn-gold:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(196,151,58,.35)}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border2)}
+.btn-outline:hover{border-color:var(--gold);color:var(--gold);background:rgba(196,151,58,.05)}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--surface);color:var(--text)}
+.btn-sm{padding:6px 12px;font-size:12px;border-radius:7px}
+.btn-xs{padding:4px 9px;font-size:11px;border-radius:6px}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:22px;backdrop-filter:blur(12px);transition:all .25s var(--ease2)}
+.card:hover{border-color:var(--border2);box-shadow:0 8px 32px rgba(0,0,0,.06)}
+.card-flat{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:22px}
+
+/* GRID */
+.g2{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.g-auto{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:18px}
+
+/* SECTION */
+.section{margin-bottom:28px}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.section-title{font-family:'Fraunces',serif;font-weight:500;font-size:19px;letter-spacing:-.3px;color:var(--text)}
+.section-sub{font-size:12px;color:var(--text3);margin-top:2px}
+
+/* STAT CARDS */
+.stat-card{
+  background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px 20px;
+  position:relative;overflow:hidden;transition:all .25s var(--ease2);
+}
+.stat-card:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.08)}
+.stat-accent-bar{position:absolute;top:0;left:0;right:0;height:2.5px;border-radius:99px 99px 0 0}
+.stat-val{font-family:'Fraunces',serif;font-size:30px;font-weight:500;letter-spacing:-.5px;color:var(--text);margin:10px 0 4px}
+.stat-label{font-size:12.5px;color:var(--text2)}
+.stat-delta{font-size:11.5px;margin-top:8px;display:flex;align-items:center;gap:4px;font-family:'DM Mono',monospace}
+.delta-up{color:var(--sage)}
+.delta-dn{color:var(--ember)}
+
+/* MATCH CARDS */
+.match-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;transition:all .28s var(--ease2);cursor:pointer}
+.match-card:hover{border-color:var(--gold);transform:translateY(-3px);box-shadow:0 12px 36px rgba(196,151,58,.12)}
+.match-avatar-wrap{position:relative;flex-shrink:0}
+.match-avatar{width:50px;height:50px;border-radius:13px;object-fit:cover;border:2px solid var(--border2);background:linear-gradient(135deg,var(--gold2),var(--ember));display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;font-family:'Fraunces',serif}
+.match-pct{font-family:'Fraunces',serif;font-size:21px;font-weight:500;color:var(--gold);letter-spacing:-.5px}
+.match-bar-track{background:var(--mist3);border-radius:99px;height:5px;overflow:hidden;margin:10px 0}
+.match-bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--gold),var(--ember));transition:width 1.4s var(--ease)}
+.tag{display:inline-flex;align-items:center;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:99px;padding:3px 9px;font-size:11.5px;color:var(--text2)}
+.tag-gold{background:rgba(196,151,58,.1);border-color:rgba(196,151,58,.25);color:var(--gold)}
+.tag-sage{background:rgba(58,124,92,.1);border-color:rgba(58,124,92,.25);color:var(--sage)}
+.tag-ember{background:rgba(196,91,58,.1);border-color:rgba(196,91,58,.25);color:var(--ember)}
+.tag-sky{background:rgba(58,107,196,.1);border-color:rgba(58,107,196,.25);color:var(--sky)}
+
+/* FEED */
+.feed-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;transition:all .22s var(--ease2)}
+.feed-card:hover{border-color:var(--border2);box-shadow:0 4px 22px rgba(0,0,0,.07)}
+.feed-avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--sage));display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;font-family:'Fraunces',serif;flex-shrink:0}
+.feed-img{width:100%;border-radius:11px;aspect-ratio:16/6;object-fit:cover;background:linear-gradient(135deg,var(--mist3),var(--mist2));margin:12px 0;display:flex;align-items:center;justify-content:center;font-size:32px;overflow:hidden}
+.feed-reaction-btn{background:var(--surface);border:1px solid var(--border);border-radius:99px;padding:4px 10px;font-size:12px;cursor:pointer;transition:all .18s;display:flex;align-items:center;gap:4px;color:var(--text2)}
+.feed-reaction-btn:hover{border-color:var(--border2);color:var(--text);background:var(--card)}
+.feed-reaction-btn.reacted{border-color:var(--gold);background:rgba(196,151,58,.08);color:var(--gold)}
+
+/* KANBAN */
+.kanban-wrap{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;overflow-x:auto;padding-bottom:6px}
+.kanban-col{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;min-width:200px}
+.kanban-col-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.kanban-col-title{font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:7px}
+.kanban-dot{width:8px;height:8px;border-radius:50%}
+.kanban-count{background:var(--card);border:1px solid var(--border);border-radius:99px;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text2);font-weight:600;font-family:'DM Mono',monospace}
+.task-card{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:12px;margin-bottom:9px;cursor:grab;transition:all .22s var(--ease2)}
+.task-card:hover{border-color:var(--border2);transform:translateY(-1px);box-shadow:0 4px 18px rgba(0,0,0,.08)}
+.task-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:5px;line-height:1.4}
+.task-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:10px}
+.prio{font-size:10px;border-radius:99px;padding:2px 7px;font-weight:600;font-family:'DM Mono',monospace}
+.prio-h{background:rgba(196,91,58,.12);color:var(--ember)}
+.prio-m{background:rgba(196,151,58,.1);color:var(--gold)}
+.prio-l{background:rgba(58,124,92,.1);color:var(--sage)}
+.task-date{font-size:10px;color:var(--text3);margin-left:auto;font-family:'DM Mono',monospace}
+
+/* PROFILE */
+.profile-banner{height:170px;border-radius:18px;position:relative;overflow:hidden;margin-bottom:56px}
+.profile-banner-bg{position:absolute;inset:0;background:linear-gradient(135deg,var(--ink2),var(--ink3));display:flex;align-items:center;justify-content:center;font-size:64px;opacity:.25;letter-spacing:8px}
+.profile-avatar-pos{position:absolute;bottom:-44px;left:24px;width:88px;height:88px;border-radius:50%;border:4px solid var(--cream);box-shadow:0 6px 24px rgba(0,0,0,.15);background:linear-gradient(135deg,var(--gold),var(--ember));display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:30px;font-weight:500;color:#fff}
+.profile-name{font-family:'Fraunces',serif;font-size:24px;font-weight:500;letter-spacing:-.4px;color:var(--text)}
+.profile-role{font-size:13.5px;color:var(--text2);margin:3px 0 10px}
+.profile-bio{font-size:13.5px;color:var(--text2);line-height:1.7;max-width:560px}
+
+/* AI CHATBOT */
+.chat-panel{
+  position:fixed;bottom:24px;right:24px;width:380px;height:520px;
+  background:var(--cream);border:1px solid var(--border2);border-radius:22px;
+  box-shadow:0 24px 72px rgba(0,0,0,.18);z-index:300;
+  display:flex;flex-direction:column;overflow:hidden;
+  transform:translateY(20px) scale(.97);opacity:0;pointer-events:none;
+  transition:all .32s var(--ease);
+}
+.chat-panel.open{transform:translateY(0) scale(1);opacity:1;pointer-events:all}
+.chat-header{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.chat-ai-dot{width:9px;height:9px;border-radius:50%;background:var(--sage);box-shadow:0 0 0 3px rgba(58,124,92,.2);animation:pulse-green 2s infinite}
+@keyframes pulse-green{0%,100%{box-shadow:0 0 0 3px rgba(58,124,92,.2)}50%{box-shadow:0 0 0 5px rgba(58,124,92,.08)}}
+.chat-messages{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+.chat-msg{max-width:84%;display:flex;flex-direction:column;gap:3px}
+.chat-msg.user{align-self:flex-end;align-items:flex-end}
+.chat-msg.ai{align-self:flex-start}
+.chat-bubble{padding:10px 13px;border-radius:14px;font-size:13px;line-height:1.55}
+.chat-msg.ai .chat-bubble{background:var(--surface);border:1px solid var(--border);border-bottom-left-radius:4px;color:var(--text)}
+.chat-msg.user .chat-bubble{background:linear-gradient(135deg,var(--gold),var(--ember));color:#fff;border-bottom-right-radius:4px}
+.chat-time{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;padding:0 4px}
+.chat-input-wrap{padding:12px 14px;border-top:1px solid var(--border);display:flex;gap:9px;flex-shrink:0}
+.chat-input{flex:1;background:var(--surface);border:1px solid var(--border2);border-radius:99px;padding:9px 16px;font-size:13px;font-family:'Outfit',sans-serif;color:var(--text);outline:none;transition:all .2s}
+.chat-input:focus{border-color:var(--gold);background:var(--card)}
+.chat-send{width:36px;height:36px;border-radius:99px;background:linear-gradient(135deg,var(--gold),var(--ember));border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;flex-shrink:0;transition:all .2s}
+.chat-send:hover{transform:scale(1.08)}
+.chat-fab{
+  position:fixed;bottom:24px;right:24px;width:52px;height:52px;
+  border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--ember));
+  border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:22px;color:#fff;z-index:299;box-shadow:0 6px 22px rgba(196,151,58,.4);
+  transition:all .28s var(--ease);
+}
+.chat-fab:hover{transform:scale(1.08) translateY(-2px)}
+.typing-dots{display:flex;gap:4px;padding:4px 0}
+.typing-dots span{width:6px;height:6px;border-radius:50%;background:var(--text3);animation:typing .9s infinite}
+.typing-dots span:nth-child(2){animation-delay:.15s}
+.typing-dots span:nth-child(3){animation-delay:.3s}
+@keyframes typing{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-4px);opacity:1}}
+
+/* ECOSYSTEM MAP */
+#map-svg{width:100%;height:100%}
+.map-wrap{width:100%;height:420px;background:var(--mist2);border-radius:16px;border:1px solid var(--border);overflow:hidden;position:relative}
+.dark .map-wrap{background:var(--mist3)}
+
+/* ONBOARDING */
+.onboard-overlay{position:fixed;inset:0;background:rgba(12,14,18,.75);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px}
+.onboard-card{background:var(--cream);border:1px solid var(--border2);border-radius:24px;padding:36px;max-width:500px;width:100%;position:relative;box-shadow:0 32px 80px rgba(0,0,0,.2)}
+.ob-logo{font-family:'Fraunces',serif;font-size:28px;font-weight:500;letter-spacing:-.5px;color:var(--text);margin-bottom:6px}
+.ob-logo span{color:var(--gold)}
+.ob-step{display:none}
+.ob-step.active{display:block;animation:fadeUp .3s var(--ease) both}
+.ob-steps-bar{display:flex;gap:6px;margin-bottom:24px}
+.ob-step-dot{height:3px;flex:1;border-radius:99px;background:var(--border2);transition:background .3s}
+.ob-step-dot.done,.ob-step-dot.active{background:var(--gold)}
+.ob-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:16px 0}
+.ob-chip{
+  border:1.5px solid var(--border2);border-radius:11px;padding:12px 10px;
+  text-align:center;cursor:pointer;transition:all .2s var(--ease2);
+  background:var(--surface);
+}
+.ob-chip:hover{border-color:var(--gold);background:rgba(196,151,58,.06)}
+.ob-chip.selected{border-color:var(--gold);background:rgba(196,151,58,.1);color:var(--gold)}
+.ob-chip-icon{font-size:22px;margin-bottom:5px}
+.ob-chip-label{font-size:12px;font-weight:600}
+.ob-input{width:100%;background:var(--surface);border:1.5px solid var(--border2);border-radius:10px;padding:11px 14px;font-size:14px;font-family:'Outfit',sans-serif;color:var(--text);outline:none;transition:all .22s;margin-bottom:10px}
+.ob-input:focus{border-color:var(--gold);background:var(--card)}
+.ob-input::placeholder{color:var(--text3)}
+
+/* CONTRIBUTION BADGES */
+.badge-item{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)}
+.badge-icon{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
+.badge-name{font-size:13.5px;font-weight:600;color:var(--text)}
+.badge-desc{font-size:12px;color:var(--text3);margin-top:2px}
+.badge-pts{font-family:'DM Mono',monospace;font-size:12px;color:var(--gold);margin-left:auto;white-space:nowrap}
+
+/* LANG SWITCHER */
+.lang-wrap{background:var(--surface);border:1px solid var(--border);border-radius:99px;padding:3px;display:flex;gap:2px}
+.lang-btn{padding:4px 10px;border-radius:99px;font-size:12px;cursor:pointer;color:var(--text2);transition:all .2s;font-family:'DM Mono',monospace;border:none;background:transparent}
+.lang-btn.active{background:var(--gold);color:#fff}
+
+/* ANALYTICS */
+.heatmap-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:3px;margin-top:10px}
+.heatmap-cell{height:18px;border-radius:4px;cursor:pointer;transition:all .2s}
+.heatmap-cell:hover{transform:scale(1.2)}
+
+/* USER CARDS */
+.user-card{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;transition:all .25s var(--ease2)}
+.user-card:hover{transform:translateY(-3px);box-shadow:0 10px 32px rgba(0,0,0,.09);border-color:var(--border2)}
+.user-card-banner{height:70px;background:linear-gradient(135deg,var(--ink2),var(--ink3));position:relative;display:flex;align-items:center;justify-content:center;font-size:28px;letter-spacing:6px;overflow:hidden}
+.user-card-banner::after{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,transparent,rgba(0,0,0,.4))}
+.user-card-body{padding:36px 16px 16px;text-align:center;position:relative}
+.user-card-avatar{width:60px;height:60px;border-radius:50%;border:3px solid var(--cream);position:absolute;top:-30px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--gold),var(--ember));display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:500;color:#fff;font-family:'Fraunces',serif}
+.user-card-name{font-family:'Fraunces',serif;font-weight:500;font-size:15px;color:var(--text);margin-bottom:2px}
+.user-card-role{font-size:11.5px;color:var(--text3);margin-bottom:10px}
+.user-stat-row{display:flex;justify-content:center;gap:16px;padding:10px 0;border-top:1px solid var(--border)}
+.user-stat-val{font-family:'Fraunces',serif;font-size:15px;font-weight:500;color:var(--text)}
+.user-stat-key{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px}
+
+/* TOAST */
+.toast-wrap{position:fixed;bottom:90px;right:24px;z-index:500;display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+.toast{background:var(--ink);color:#fff;border-radius:12px;padding:12px 16px;font-size:13px;max-width:300px;box-shadow:0 8px 28px rgba(0,0,0,.2);animation:toastIn .3s var(--ease) both}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px) scale(.95)}to{opacity:1;transform:translateX(0) scale(1)}}
+
+/* MOBILE MENU TOGGLE */
+.menu-toggle{display:none;width:36px;height:36px;border-radius:9px;background:var(--surface);border:1px solid var(--border);align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:var(--text2)}
+.sb-close{display:none;position:absolute;top:16px;right:16px;width:30px;height:30px;border-radius:8px;background:var(--surface);border:1px solid var(--border);align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--text2)}
+.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:199;backdrop-filter:blur(2px)}
+
+/* RESPONSIVE */
+@media(max-width:960px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.mobile-open{transform:translateX(0)}
+  .main-area{margin-left:0}
+  .menu-toggle{display:flex}
+  .sb-close{display:flex}
+  .sb-overlay.active{display:block}
+  .g4{grid-template-columns:repeat(2,1fr)}
+  .g3{grid-template-columns:repeat(2,1fr)}
+  .kanban-wrap{grid-template-columns:repeat(2,1fr)}
+  .chat-panel{width:calc(100vw - 32px);right:16px;bottom:16px}
+  .chat-fab{bottom:16px;right:16px}
+}
+@media(max-width:600px){
+  .g2,.g3,.g4{grid-template-columns:1fr}
+  .content{padding:16px}
+  .kanban-wrap{grid-template-columns:1fr}
+  .topbar{padding:0 14px;gap:8px}
+  .search-wrap{max-width:160px}
+  .ob-grid{grid-template-columns:repeat(2,1fr)}
+}
+
+/* SKELETON */
+.skel{background:linear-gradient(90deg,var(--mist2) 25%,var(--mist3) 50%,var(--mist2) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:8px}
+@keyframes shimmer{to{background-position:-200% 0}}
+
+/* DIVIDER */
+hr{border:none;border-top:1px solid var(--border);margin:16px 0}
+a{color:inherit;text-decoration:none}
+
+/* MISC */
+.online-ring{width:9px;height:9px;border-radius:50%;background:var(--sage);border:2px solid var(--cream);position:absolute;bottom:1px;right:1px}
+.monospace{font-family:'DM Mono',monospace}
+.serif{font-family:'Fraunces',serif}
+.muted{color:var(--text2)}
+.label-xs{font-size:10.5px;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;font-family:'DM Mono',monospace}
+
+/* STORYTELLING FLOW */
+.story-step{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;position:relative;flex:1}
+.story-step-icon{width:56px;height:56px;border-radius:50%;border:2px solid var(--border2);background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:24px;position:relative;z-index:1;transition:all .25s var(--ease2)}
+.story-step:hover .story-step-icon{border-color:var(--gold);background:rgba(196,151,58,.08);transform:scale(1.1)}
+.story-connector{flex:1;height:2px;background:linear-gradient(90deg,var(--border2),var(--gold),var(--border2));opacity:.5;align-self:center;margin-bottom:20px}
+.story-label{font-size:12px;font-weight:600;color:var(--text);margin-top:4px}
+.story-sub{font-size:11px;color:var(--text3);line-height:1.4}
+
+/* MAP NODE STYLES (for D3) */
+.map-node{cursor:pointer;transition:all .2s}
+.map-link{stroke-opacity:.4;transition:stroke-opacity .2s}
+</style>
+</head>
+<body>
+
+<!-- ONBOARDING -->
+<div class="onboard-overlay" id="onboard">
+  <div class="onboard-card">
+    <div class="ob-logo">Kala<span>Setu</span></div>
+    <p style="font-size:13.5px;color:var(--text2);margin-bottom:20px;line-height:1.6">The world's interdisciplinary platform for cultural preservation. Let's set up your profile.</p>
+    <div class="ob-steps-bar">
+      <div class="ob-step-dot active" id="dot0"></div>
+      <div class="ob-step-dot" id="dot1"></div>
+      <div class="ob-step-dot" id="dot2"></div>
+      <div class="ob-step-dot" id="dot3"></div>
+    </div>
+
+    <!-- Step 0 -->
+    <div class="ob-step active" id="ob0">
+      <div style="font-family:'Fraunces',serif;font-size:17px;font-weight:500;margin-bottom:6px">Welcome, fellow custodian</div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:18px">First, tell us a bit about yourself.</p>
+      <input class="ob-input" placeholder="Your full name" id="ob-name"/>
+      <input class="ob-input" placeholder="@username" id="ob-user"/>
+      <input class="ob-input" placeholder="University or Institution" id="ob-inst"/>
+      <button class="btn btn-gold" style="width:100%;justify-content:center;padding:12px" onclick="obNext()">Continue →</button>
+    </div>
+
+    <!-- Step 1 -->
+    <div class="ob-step" id="ob1">
+      <div style="font-family:'Fraunces',serif;font-size:17px;font-weight:500;margin-bottom:6px">Your primary discipline</div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:4px">Choose what best describes you</p>
+      <div class="ob-grid" id="discipline-grid">
+        <div class="ob-chip" onclick="pickDiscipline(this,'🎨','Artist')"><div class="ob-chip-icon">🎨</div><div class="ob-chip-label">Artist</div></div>
+        <div class="ob-chip" onclick="pickDiscipline(this,'📚','Historian')"><div class="ob-chip-icon">📚</div><div class="ob-chip-label">Historian</div></div>
+        <div class="ob-chip" onclick="pickDiscipline(this,'📁','Archivist')"><div class="ob-chip-icon">📁</div><div class="ob-chip-label">Archivist</div></div>
+        <div class="ob-chip" onclick="pickDiscipline(this,'💻','Technologist')"><div class="ob-chip-icon">💻</div><div class="ob-chip-label">Technologist</div></div>
+        <div class="ob-chip" onclick="pickDiscipline(this,'📜','Policymaker')"><div class="ob-chip-icon">📜</div><div class="ob-chip-label">Policymaker</div></div>
+        <div class="ob-chip" onclick="pickDiscipline(this,'🔬','Researcher')"><div class="ob-chip-icon">🔬</div><div class="ob-chip-label">Researcher</div></div>
+        <div class="ob-chip" onclick="pickDiscipline(this,'📸','Photographer')"><div class="ob-chip-icon">📸</div><div class="ob-chip-label">Photographer</div></div>
+        <div class="ob-chip" onclick="pickDiscipline(this,'🏛','Museum Lead')"><div class="ob-chip-icon">🏛</div><div class="ob-chip-label">Museum Lead</div></div>
+        <div class="ob-chip" onclick="pickDiscipline(this,'🤝','Community')"><div class="ob-chip-icon">🤝</div><div class="ob-chip-label">Community</div></div>
+      </div>
+      <button class="btn btn-gold" style="width:100%;justify-content:center;padding:12px" onclick="obNext()">Continue →</button>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="ob-step" id="ob2">
+      <div style="font-family:'Fraunces',serif;font-size:17px;font-weight:500;margin-bottom:6px">Cultural domains</div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:4px">Which cultural areas do you work in?</p>
+      <div style="display:flex;flex-wrap:wrap;gap:7px;margin:12px 0">
+        <div class="tag" style="cursor:pointer;font-size:12px;padding:5px 12px" onclick="toggleTag(this)">🎵 Music Heritage</div>
+        <div class="tag" style="cursor:pointer;font-size:12px;padding:5px 12px" onclick="toggleTag(this)">🗿 Archaeology</div>
+        <div class="tag" style="cursor:pointer;font-size:12px;padding:5px 12px" onclick="toggleTag(this)">🗣 Oral History</div>
+        <div class="tag" style="cursor:pointer;font-size:12px;padding:5px 12px" onclick="toggleTag(this)">📖 Literature</div>
+        <div class="tag" style="cursor:pointer;font-size:12px;padding:5px 12px" onclick="toggleTag(this)">🏺 Material Culture</div>
+        <div class="tag" style="cursor:pointer;font-size:12px;padding:5px 12px" onclick="toggleTag(this)">🌿 Indigenous Knowledge</div>
+        <div class="tag" style="cursor:pointer;font-size:12px;padding:5px 12px" onclick="toggleTag(this)">🎭 Performing Arts</div>
+        <div class="tag" style="cursor:pointer;font-size:12px;padding:5px 12px" onclick="toggleTag(this)">🏯 Architecture</div>
+        <div class="tag" style="cursor:pointer;font-size:12px;padding:5px 12px" onclick="toggleTag(this)">🍱 Food Culture</div>
+      </div>
+      <textarea class="ob-input" rows="2" placeholder="Brief bio — what draws you to cultural preservation?" style="resize:none;border-radius:10px;margin-top:4px"></textarea>
+      <button class="btn btn-gold" style="width:100%;justify-content:center;padding:12px" onclick="obNext()">Continue →</button>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="ob-step" id="ob3">
+      <div style="font-size:40px;margin-bottom:10px">🌍</div>
+      <div style="font-family:'Fraunces',serif;font-size:19px;font-weight:500;margin-bottom:8px">You're ready.</div>
+      <p style="font-size:13.5px;color:var(--text2);line-height:1.65;margin-bottom:24px">Welcome to the CulturaBridge ecosystem. Your profile is live — start discovering collaborators and preservation projects from around the world.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:20px">
+        <div class="tag tag-gold">12,847 collaborators</div>
+        <div class="tag tag-sage">3,291 active projects</div>
+        <div class="tag tag-sky">168 countries</div>
+      </div>
+      <button class="btn btn-gold" style="width:100%;justify-content:center;padding:13px;font-size:14px" onclick="closeOnboard()">Enter CulturaBridge →</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOASTS -->
+<div class="toast-wrap" id="toast-wrap"></div>
+
+<!-- OVERLAY FOR MOBILE SIDEBAR -->
+<div class="sb-overlay" id="sb-overlay" onclick="closeMobileSidebar()"></div>
+
+<!-- APP SHELL -->
+<div class="app-shell">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sb-logo" onclick="navigate('home')">
+      <div class="sb-logo-mark">C</div>
+      <div>
+        <div class="sb-logo-text">CulturaBridge</div>
+        <div class="sb-logo-sub">Preservation OS</div>
+      </div>
+    </div>
+    <button class="sb-close" onclick="closeMobileSidebar()">✕</button>
+    <nav class="sb-nav">
+      <div class="sb-section-label">Discover</div>
+      <div class="sb-item active" id="nav-home" onclick="navigate('home')"><span class="sb-icon">🏠</span> Home Feed</div>
+      <div class="sb-item" id="nav-match" onclick="navigate('match')"><span class="sb-icon">✨</span> Matchmaking</div>
+      <div class="sb-item" id="nav-map" onclick="navigate('map')"><span class="sb-icon">🌐</span> Ecosystem Map</div>
+      <div class="sb-item" id="nav-community" onclick="navigate('community')"><span class="sb-icon">👥</span> Community</div>
+
+      <div class="sb-section-label" style="margin-top:4px">Create</div>
+      <div class="sb-item" id="nav-projects" onclick="navigate('projects')"><span class="sb-icon">📂</span> Projects <span class="sb-badge">3</span></div>
+      <div class="sb-item" id="nav-archive" onclick="navigate('archive')"><span class="sb-icon">🗄</span> Archive</div>
+      <div class="sb-item" id="nav-story" onclick="navigate('story')"><span class="sb-icon">🎬</span> Story Flow</div>
+
+      <div class="sb-section-label" style="margin-top:4px">Grow</div>
+      <div class="sb-item" id="nav-analytics" onclick="navigate('analytics')"><span class="sb-icon">📊</span> Analytics</div>
+      <div class="sb-item" id="nav-reputation" onclick="navigate('reputation')"><span class="sb-icon">🏅</span> Reputation</div>
+      <div class="sb-item" id="nav-profile" onclick="navigate('profile')"><span class="sb-icon">👤</span> My Profile</div>
+    </nav>
+    <div class="sb-user" onclick="navigate('profile')">
+      <div class="sb-avatar" style="position:relative">A <span class="online-ring"></span></div>
+      <div><div class="sb-uname">Arjun Sharma</div><div class="sb-urole">Cultural Technologist</div></div>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <div class="main-area" id="main-area">
+    <div class="topbar">
+      <button class="menu-toggle" onclick="openMobileSidebar()">☰</button>
+      <div class="tb-title" id="page-title">Home Feed</div>
+      <div class="search-wrap">
+        <span class="search-icon-pos">🔍</span>
+        <input placeholder="Search projects, people, archives…" id="search-inp" oninput="handleSearch(this.value)"/>
+      </div>
+      <div class="tb-actions">
+        <div class="lang-wrap">
+          <button class="lang-btn active" onclick="setLang('en',this)">EN</button>
+          <button class="lang-btn" onclick="setLang('es',this)">ES</button>
+          <button class="lang-btn" onclick="setLang('hi',this)">HI</button>
+          <button class="lang-btn" onclick="setLang('kn',this)">KN</button>
+        </div>
+        <div class="icon-btn" onclick="toggleTheme()" title="Toggle theme">🌙</div>
+        <div class="icon-btn" style="position:relative" onclick="showToast('You have 4 new notifications','📬')">
+          🔔<span class="dot-badge"></span>
+        </div>
+        <div class="icon-btn" onclick="navigate('profile')">👤</div>
+      </div>
+    </div>
+
+    <div class="content" id="content">
+
+      <!-- PAGE: HOME -->
+      <div class="page active" id="page-home">
+        <div class="section">
+          <div class="section-head">
+            <div>
+              <div class="section-title" data-i18n="welcome">Welcome back, Arjun</div>
+              <div class="section-sub" data-i18n="welcome_sub">You have 7 new collaboration requests and 2 project updates</div>
+            </div>
+            <button class="btn btn-gold btn-sm" onclick="navigate('match')">✨ Find Collaborators</button>
+          </div>
+          <!-- STAT CARDS -->
+          <div class="g4" style="margin-bottom:20px">
+            <div class="stat-card">
+              <div class="stat-accent-bar" style="background:linear-gradient(90deg,var(--gold),var(--gold2))"></div>
+              <div class="label-xs">Total Collaborations</div>
+              <div class="stat-val" data-count="247">247</div>
+              <div class="stat-label" data-i18n="active_partners">Active partners</div>
+              <div class="stat-delta delta-up">↑ +12 this month</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-accent-bar" style="background:linear-gradient(90deg,var(--sage),#5eb88a)"></div>
+              <div class="label-xs">Archive Items</div>
+              <div class="stat-val" data-count="1839">1,839</div>
+              <div class="stat-label" data-i18n="cultural_items">Cultural items preserved</div>
+              <div class="stat-delta delta-up">↑ +84 this week</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-accent-bar" style="background:linear-gradient(90deg,var(--sky),#6a9fe8)"></div>
+              <div class="label-xs">Active Projects</div>
+              <div class="stat-val" data-count="18">18</div>
+              <div class="stat-label" data-i18n="running_projects">Ongoing preservation projects</div>
+              <div class="stat-delta delta-up">↑ 3 new this week</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-accent-bar" style="background:linear-gradient(90deg,var(--ember),#e87a5c)"></div>
+              <div class="label-xs">Reputation Score</div>
+              <div class="stat-val" data-count="924">924</div>
+              <div class="stat-label" data-i18n="trust_score">Community trust score</div>
+              <div class="stat-delta delta-up">↑ +18 points</div>
+            </div>
+          </div>
+
+          <!-- QUICK MATCHES & FEED -->
+          <div class="g2">
+            <div>
+              <div class="section-head" style="margin-bottom:12px">
+                <div><div class="section-title" style="font-size:16px" data-i18n="suggested_matches">Suggested Matches</div></div>
+                <span class="btn btn-ghost btn-xs" onclick="navigate('match')">View all</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div class="match-card" onclick="openMatchModal('Dr. Leila Nkosi','AI Engineer','Cape Town, SA','91')">
+                  <div style="display:flex;align-items:center;gap:12px">
+                    <div class="match-avatar-wrap"><div class="match-avatar">L</div></div>
+                    <div style="flex:1">
+                      <div style="font-family:'Fraunces',serif;font-size:15px;font-weight:500;color:var(--text)">Dr. Leila Nkosi</div>
+                      <div style="font-size:12px;color:var(--text3)">AI Engineer · Cape Town, SA</div>
+                    </div>
+                    <div style="text-align:right">
+                      <div class="match-pct">91%</div>
+                      <div style="font-size:10px;color:var(--text3)">synergy</div>
+                    </div>
+                  </div>
+                  <div class="match-bar-track"><div class="match-bar-fill" style="width:91%"></div></div>
+                  <div style="display:flex;flex-wrap:wrap;gap:5px">
+                    <span class="tag tag-gold">AI/ML</span><span class="tag tag-sage">Oral History</span><span class="tag">UNESCO</span>
+                  </div>
+                  <div style="display:flex;gap:7px;margin-top:2px">
+                    <button class="btn btn-gold btn-xs" onclick="event.stopPropagation();showToast('Connection request sent!','✨')">Connect</button>
+                    <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation()">Message</button>
+                  </div>
+                </div>
+
+                <div class="match-card" onclick="openMatchModal('Prof. Mihail Ionescu','Historian','Bucharest, RO','87')">
+                  <div style="display:flex;align-items:center;gap:12px">
+                    <div class="match-avatar-wrap"><div class="match-avatar" style="background:linear-gradient(135deg,var(--sky),var(--sage))">M</div></div>
+                    <div style="flex:1">
+                      <div style="font-family:'Fraunces',serif;font-size:15px;font-weight:500;color:var(--text)">Prof. Mihail Ionescu</div>
+                      <div style="font-size:12px;color:var(--text3)">Historian · Bucharest, RO</div>
+                    </div>
+                    <div style="text-align:right">
+                      <div class="match-pct">87%</div>
+                      <div style="font-size:10px;color:var(--text3)">synergy</div>
+                    </div>
+                  </div>
+                  <div class="match-bar-track"><div class="match-bar-fill" style="width:87%"></div></div>
+                  <div style="display:flex;flex-wrap:wrap;gap:5px">
+                    <span class="tag tag-sky">Medieval</span><span class="tag tag-ember">Manuscripts</span>
+                  </div>
+                  <div style="display:flex;gap:7px;margin-top:2px">
+                    <button class="btn btn-gold btn-xs" onclick="event.stopPropagation();showToast('Connection request sent!','✨')">Connect</button>
+                    <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation()">Message</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="section-head" style="margin-bottom:12px">
+                <div><div class="section-title" style="font-size:16px" data-i18n="activity_feed">Activity Feed</div></div>
+                <span class="btn btn-ghost btn-xs" onclick="navigate('home')">Latest</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div class="feed-card">
+                  <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
+                    <div class="feed-avatar">S</div>
+                    <div style="flex:1"><div style="font-size:13.5px;font-weight:600;color:var(--text)">Suki Watanabe</div><div style="font-size:11px;color:var(--text3)">2h ago · Tokyo, JP</div></div>
+                    <span class="tag tag-gold" style="font-size:10px;padding:2px 7px">Grant</span>
+                  </div>
+                  <div style="font-family:'Fraunces',serif;font-size:14px;font-weight:500;color:var(--text);margin-bottom:5px">UNESCO Emergency Fund for Ryūkyū Music Archives</div>
+                  <div style="font-size:12.5px;color:var(--text2);line-height:1.6;margin-bottom:10px">Seeking a sound engineer and AI specialist to co-apply for digitization grant before August deadline.</div>
+                  <div style="display:flex;gap:6px">
+                    <button class="feed-reaction-btn" onclick="reactFeed(this,'❤️')">❤️ 24</button>
+                    <button class="feed-reaction-btn" onclick="reactFeed(this,'💬')">💬 8</button>
+                    <button class="feed-reaction-btn" onclick="showToast('Post saved!','🔖')">🔖</button>
+                    <button class="btn btn-gold btn-xs" style="margin-left:auto" onclick="showToast('Collaboration request sent!','🤝')">Collaborate</button>
+                  </div>
+                </div>
+
+                <div class="feed-card">
+                  <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
+                    <div class="feed-avatar" style="background:linear-gradient(135deg,var(--ember),var(--gold))">K</div>
+                    <div style="flex:1"><div style="font-size:13.5px;font-weight:600;color:var(--text)">Kavya Reddy</div><div style="font-size:11px;color:var(--text3)">5h ago · Hyderabad, IN</div></div>
+                    <span class="tag tag-sage" style="font-size:10px;padding:2px 7px">Archive</span>
+                  </div>
+                  <div style="font-family:'Fraunces',serif;font-size:14px;font-weight:500;color:var(--text);margin-bottom:5px">2,400 Kondapalli toy-making photos digitized ✓</div>
+                  <div style="font-size:12.5px;color:var(--text2);line-height:1.6;margin-bottom:10px">Three months of field documentation now live in the public archive. Open for AI tagging collaboration.</div>
+                  <div style="display:flex;gap:6px">
+                    <button class="feed-reaction-btn" onclick="reactFeed(this,'❤️')">❤️ 61</button>
+                    <button class="feed-reaction-btn" onclick="reactFeed(this,'💬')">💬 14</button>
+                    <button class="btn btn-gold btn-xs" style="margin-left:auto" onclick="showToast('Opened archive!','🗄')">View Archive</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TRENDING PROJECTS -->
+        <div class="section">
+          <div class="section-head">
+            <div><div class="section-title" data-i18n="trending">Trending Preservation Projects</div></div>
+            <button class="btn btn-ghost btn-sm" onclick="navigate('projects')">All projects</button>
+          </div>
+          <div class="g3">
+            <div class="card" onclick="navigate('projects')" style="cursor:pointer">
+              <div style="font-size:24px;margin-bottom:10px">🎵</div>
+              <div style="font-family:'Fraunces',serif;font-size:15px;font-weight:500;color:var(--text);margin-bottom:5px">Carnatic Music AI Taxonomy</div>
+              <div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:12px">Building a comprehensive ML-powered classification system for 3,000+ ragas with historical provenance.</div>
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <div style="display:flex;gap:5px"><span class="tag tag-gold">AI</span><span class="tag">Music</span></div>
+                <div style="font-size:11px;color:var(--text3)">24 collaborators</div>
+              </div>
+            </div>
+            <div class="card" onclick="navigate('projects')" style="cursor:pointer">
+              <div style="font-size:24px;margin-bottom:10px">🗿</div>
+              <div style="font-family:'Fraunces',serif;font-size:15px;font-weight:500;color:var(--text);margin-bottom:5px">Maya Glyphs OCR Project</div>
+              <div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:12px">Training computer vision models on ancient Maya inscriptions from 14 archaeological sites across Mesoamerica.</div>
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <div style="display:flex;gap:5px"><span class="tag tag-sage">CV</span><span class="tag">Archaeology</span></div>
+                <div style="font-size:11px;color:var(--text3)">38 collaborators</div>
+              </div>
+            </div>
+            <div class="card" onclick="navigate('projects')" style="cursor:pointer">
+              <div style="font-size:24px;margin-bottom:10px">📖</div>
+              <div style="font-family:'Fraunces',serif;font-size:15px;font-weight:500;color:var(--text);margin-bottom:5px">Endangered Languages Corpus</div>
+              <div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:12px">Documenting 47 languages with fewer than 1,000 speakers through field recordings and linguistic analysis.</div>
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <div style="display:flex;gap:5px"><span class="tag tag-ember">Linguistics</span><span class="tag">NLP</span></div>
+                <div style="font-size:11px;color:var(--text3)">19 collaborators</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE: MATCHMAKING -->
+      <div class="page" id="page-match">
+        <div class="section">
+          <div class="section-head">
+            <div>
+              <div class="section-title" data-i18n="matchmaking">AI Matchmaking</div>
+              <div class="section-sub">Powered by collaborative intelligence — finding your ideal preservation partners</div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <select style="background:var(--surface);border:1px solid var(--border2);border-radius:9px;padding:7px 12px;font-size:12.5px;color:var(--text);font-family:'Outfit',sans-serif;outline:none" onchange="filterMatches(this.value)">
+                <option value="">All disciplines</option>
+                <option value="AI">AI Engineers</option>
+                <option value="Historian">Historians</option>
+                <option value="Artist">Artists</option>
+                <option value="Archivist">Archivists</option>
+              </select>
+              <button class="btn btn-gold btn-sm" onclick="refreshMatches()">✨ Refresh AI Matches</button>
+            </div>
+          </div>
+
+          <!-- AI INSIGHT CARD -->
+          <div class="card-flat" style="margin-bottom:18px;background:linear-gradient(135deg,rgba(196,151,58,.08),rgba(196,91,58,.05));border-color:rgba(196,151,58,.25)">
+            <div style="display:flex;align-items:flex-start;gap:12px">
+              <div style="font-size:24px">🤖</div>
+              <div style="flex:1">
+                <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">AI Collaboration Insight</div>
+                <div style="font-size:13px;color:var(--text2);line-height:1.65">Your profile as a Cultural Technologist with expertise in oral history and NLP creates <strong style="color:var(--gold)">3 high-synergy pathways</strong>: pairing with archivists for metadata structuring, historians for contextual validation, and AI engineers for model training. This week's top connection: field researchers from South Asia.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="g-auto" id="match-grid">
+            <div class="match-card" onclick="openMatchModal('Dr. Leila Nkosi','AI Engineer · Cape Town, SA','Cape Town, SA','91')">
+              <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+                <div class="match-avatar">L</div>
+                <div style="flex:1"><div style="font-family:'Fraunces',serif;font-size:15px;font-weight:500;color:var(--text)">Dr. Leila Nkosi</div><div style="font-size:12px;color:var(--text3)">AI Engineer · Cape Town, SA</div></div>
+                <div style="text-align:right"><div class="match-pct">91%</div><div style="font-size:10px;color:var(--text3)">synergy</div></div>
+              </div>
+              <div class="match-bar-track"><div class="match-bar-fill" style="width:0%" data-target="91"></div></div>
+              <div style="font-size:12px;color:var(--text2);line-height:1.6;margin:8px 0">Specialises in speech-to-text models for under-resourced African languages. UNESCO advisor since 2019.</div>
+              <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px"><span class="tag tag-gold">AI/ML</span><span class="tag tag-sage">Oral History</span><span class="tag">NLP</span><span class="tag">UNESCO</span></div>
+              <div style="font-size:11.5px;color:var(--text3);font-style:italic;margin-bottom:10px;padding:8px;background:var(--surface);border-radius:8px">💡 "Both working on audio preservation — high complementarity in technical + cultural domain"</div>
+              <div style="display:flex;gap:7px">
+                <button class="btn btn-gold btn-sm" onclick="event.stopPropagation();showToast('Connection sent to Dr. Nkosi!','✨')">Connect</button>
+                <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();showToast('Message thread opened!','💬')">Message</button>
+                <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();showToast('Bookmarked!','🔖')">🔖</button>
+              </div>
+            </div>
+
+            <div class="match-card" onclick="openMatchModal('Prof. Mihail Ionescu','Historian · Bucharest, RO','Bucharest, RO','87')">
+              <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+                <div class="match-avatar" style="background:linear-gradient(135deg,var(--sky),var(--sage))">M</div>
+                <div style="flex:1"><div style="font-family:'Fraunces',serif;font-size:15px;font-weight:500;color:var(--text)">Prof. Mihail Ionescu</div><div style="font-size:12px;color:var(--text3)">Historian · Bucharest, RO</div></div>
+                <div style="text-align:right"><div class="match-pct">87%</div><div style="font-size:10px;color:var(--text3)">synergy</div></div>
+              </div>
+              <div class="match-bar-track"><div class="match-bar-fill" style="width:0%" data-target="87"></div></div>
+              <div style="font-size:12px;color:var(--text2);line-height:1.6;margin:8px 0">30 years digitising medieval Romanian manuscripts. Seeking ML partners for OCR workflow automation.</div>
+              <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px"><span class="tag tag-sky">Medieval</span><span class="tag tag-ember">Manuscripts</span><span class="tag">OCR</span></div>
+              <div style="font-size:11.5px;color:var(--text3);font-style:italic;margin-bottom:10px;padding:8px;background:var(--surface);border-radius:8px">💡 "Your NLP skills + his historical expertise = powerful manuscript digitization pipeline"</div>
+              <div style="display:flex;gap:7px">
+                <button class="btn btn-gold btn-sm" onclick="event.stopPropagation();showToast('Connection sent!','✨')">Connect</button>
+                <button class="btn btn-outline btn-sm" onclick="event.stopPropagation()">Message</button>
+                <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation()">🔖</button>
+              </div>
+            </div>
+
+            <div class="match-card" onclick="openMatchModal('Amara Diallo','Archivist · Dakar, SN','Dakar, SN','84')">
+              <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+                <div class="match-avatar" style="background:linear-gradient(135deg,var(--ember),#e87a5c)">A</div>
+                <div style="flex:1"><div style="font-family:'Fraunces',serif;font-size:15px;font-weight:500;color:var(--text)">Amara Diallo</div><div style="font-size:12px;color:var(--text3)">Archivist · Dakar, SN</div></div>
+                <div style="text-align:right"><div class="match-pct">84%</div><div style="font-size:10px;color:var(--text3)">synergy</div></div>
+              </div>
+              <div class="match-bar-track"><div class="match-bar-fill" style="width:0%" data-target="84"></div></div>
+              <div style="font-size:12px;color:var(--text2);line-height:1.6;margin:8px 0">Heads the West African Oral Traditions archive. 14,000+ hours of field recordings across 6 countries.</div>
+              <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px"><span class="tag tag-sage">Oral Traditions</span><span class="tag">West Africa</span><span class="tag tag-gold">Field Work</span></div>
+              <div style="font-size:11.5px;color:var(--text3);font-style:italic;margin-bottom:10px;padding:8px;background:var(--surface);border-radius:8px">💡 "Your audio AI models could transform her analogue tape archive into searchable digital corpus"</div>
+              <div style="display:flex;gap:7px">
+                <button class="btn btn-gold btn-sm" onclick="event.stopPropagation();showToast('Connection sent!','✨')">Connect</button>
+                <button class="btn btn-outline btn-sm" onclick="event.stopPropagation()">Message</button>
+                <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation()">🔖</button>
+              </div>
+            </div>
+
+            <div class="match-card" onclick="openMatchModal('Suki Watanabe','Photographer · Tokyo, JP','Tokyo, JP','79')">
+              <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+                <div class="match-avatar" style="background:linear-gradient(135deg,var(--sage),var(--sky))">S</div>
+                <div style="flex:1"><div style="font-family:'Fraunces',serif;font-size:15px;font-weight:500;color:var(--text)">Suki Watanabe</div><div style="font-size:12px;color:var(--text3)">Photographer · Tokyo, JP</div></div>
+                <div style="text-align:right"><div class="match-pct">79%</div><div style="font-size:10px;color:var(--text3)">synergy</div></div>
+              </div>
+              <div class="match-bar-track"><div class="match-bar-fill" style="width:0%" data-target="79"></div></div>
+              <div style="font-size:12px;color:var(--text2);line-height:1.6;margin:8px 0">Documentary photographer specialising in endangered craft traditions across East Asia. Active UNESCO collaborator.</div>
+              <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px"><span class="tag">Photography</span><span class="tag tag-ember">Craft</span><span class="tag">East Asia</span></div>
+              <div style="font-size:11.5px;color:var(--text3);font-style:italic;margin-bottom:10px;padding:8px;background:var(--surface);border-radius:8px">💡 "Her visual documentation + your AI tagging = rich, searchable cultural image corpus"</div>
+              <div style="display:flex;gap:7px">
+                <button class="btn btn-gold btn-sm" onclick="event.stopPropagation();showToast('Connection sent!','✨')">Connect</button>
+                <button class="btn btn-outline btn-sm" onclick="event.stopPropagation()">Message</button>
+                <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation()">🔖</button>
+              </div>
+            </div>
+
+            <div class="match-card" onclick="openMatchModal('Dr. Reza Tehrani','Policymaker · Tehran, IR','Tehran, IR','76')">
+              <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+                <div class="match-avatar" style="background:linear-gradient(135deg,var(--sky),var(--ember))">R</div>
+                <div style="flex:1"><div style="font-family:'Fraunces',serif;font-size:15px;font-weight:500;color:var(--text)">Dr. Reza Tehrani</div><div style="font-size:12px;color:var(--text3)">Policymaker · Tehran, IR</div></div>
+                <div style="text-align:right"><div class="match-pct">76%</div><div style="font-size:10px;color:var(--text3)">synergy</div></div>
+              </div>
+              <div class="match-bar-track"><div class="match-bar-fill" style="width:0%" data-target="76"></div></div>
+              <div style="font-size:12px;color:var(--text2);line-height:1.6;margin:8px 0">Senior advisor at Iran's Cultural Heritage Organisation. Expert in intangible heritage policy and AI governance.</div>
+              <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px"><span class="tag tag-sky">Policy</span><span class="tag">AI Governance</span><span class="tag tag-sage">Heritage Law</span></div>
+              <div style="font-size:11.5px;color:var(--text3);font-style:italic;margin-bottom:10px;padding:8px;background:var(--surface);border-radius:8px">💡 "Critical policy context for your AI tools — shared interest in ethical heritage digitization"</div>
+              <div style="display:flex;gap:7px">
+                <button class="btn btn-gold btn-sm" onclick="event.stopPropagation();showToast('Connection sent!','✨')">Connect</button>
+                <button class="btn btn-outline btn-sm" onclick="event.stopPropagation()">Message</button>
+                <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation()">🔖</button>
+              </div>
+            </div>
+
+            <div class="match-card" onclick="openMatchModal('Kavya Reddy','Researcher · Hyderabad, IN','Hyderabad, IN','73')">
+              <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+                <div class="match-avatar" style="background:linear-gradient(135deg,#a06cd5,var(--sky))">K</div>
+                <div style="flex:1"><div style="font-family:'Fraunces',serif;font-size:15px;font-weight:500;color:var(--text)">Kavya Reddy</div><div style="font-size:12px;color:var(--text3)">Researcher · Hyderabad, IN</div></div>
+                <div style="text-align:right"><div class="match-pct">73%</div><div style="font-size:10px;color:var(--text3)">synergy</div></div>
+              </div>
+              <div class="match-bar-track"><div class="match-bar-fill" style="width:0%" data-target="73"></div></div>
+              <div style="font-size:12px;color:var(--text2);line-height:1.6;margin:8px 0">Ethnographer documenting Telugu folk traditions. Currently building the largest digital Kuchipudi corpus.</div>
+              <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px"><span class="tag">Ethnography</span><span class="tag tag-ember">Folk Arts</span><span class="tag">Telugu</span></div>
+              <div style="font-size:11.5px;color:var(--text3);font-style:italic;margin-bottom:10px;padding:8px;background:var(--surface);border-radius:8px">💡 "Shared regional focus — your technology could scale her fieldwork impact significantly"</div>
+              <div style="display:flex;gap:7px">
+                <button class="btn btn-gold btn-sm" onclick="event.stopPropagation();showToast('Connection sent!','✨')">Connect</button>
+                <button class="btn btn-outline btn-sm" onclick="event.stopPropagation()">Message</button>
+                <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation()">🔖</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE: ECOSYSTEM MAP -->
+      <div class="page" id="page-map">
+        <div class="section">
+          <div class="section-head">
+            <div>
+              <div class="section-title">Ecosystem Map</div>
+              <div class="section-sub">Live force-directed network of 12,847 collaborators across 168 countries</div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-outline btn-sm" onclick="filterMap('all')">All</button>
+              <button class="btn btn-outline btn-sm" onclick="filterMap('artist')">🎨 Artists</button>
+              <button class="btn btn-outline btn-sm" onclick="filterMap('historian')">📚 Historians</button>
+              <button class="btn btn-outline btn-sm" onclick="filterMap('tech')">💻 Tech</button>
+            </div>
+          </div>
+          <div class="map-wrap" id="map-container">
+            <svg id="map-svg"></svg>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:12px">
+            <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)"><div style="width:10px;height:10px;border-radius:50%;background:var(--gold)"></div>Artists & Creators</div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)"><div style="width:10px;height:10px;border-radius:50%;background:var(--sky)"></div>Historians & Researchers</div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)"><div style="width:10px;height:10px;border-radius:50%;background:var(--sage)"></div>AI & Technologists</div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)"><div style="width:10px;height:10px;border-radius:50%;background:var(--ember)"></div>Archivists & Museums</div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)"><div style="width:10px;height:10px;border-radius:50%;background:#a06cd5"></div>Policymakers</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE: COMMUNITY -->
+      <div class="page" id="page-community">
+        <div class="section">
+          <div class="section-head">
+            <div><div class="section-title">Community</div><div class="section-sub">Global network of 12,847 cultural preservation professionals</div></div>
+            <button class="btn btn-gold btn-sm" onclick="showToast('Invite link copied!','🔗')">+ Invite Collaborator</button>
+          </div>
+          <div class="g-auto" id="community-grid">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE: PROJECTS -->
+      <div class="page" id="page-projects">
+        <div class="section">
+          <div class="section-head">
+            <div><div class="section-title">Project Workspaces</div><div class="section-sub">Your collaborative preservation studios</div></div>
+            <button class="btn btn-gold btn-sm" onclick="showToast('New project created!','📂')">+ New Project</button>
+          </div>
+          <div class="kanban-wrap">
+            <div class="kanban-col">
+              <div class="kanban-col-head">
+                <div class="kanban-col-title"><div class="kanban-dot" style="background:var(--text3)"></div>Backlog</div>
+                <div class="kanban-count">3</div>
+              </div>
+              <div class="task-card"><div class="task-title">Set up Kondapalli toy taxonomy</div><div style="font-size:11px;color:var(--text2);margin-bottom:8px;line-height:1.5">Define ontology for craft categories and regional variants</div><div class="task-meta"><span class="prio prio-m">Medium</span><span class="task-date">Jun 15</span></div></div>
+              <div class="task-card"><div class="task-title">Secure field recording equipment for Rajasthan trip</div><div style="font-size:11px;color:var(--text2);margin-bottom:8px;line-height:1.5">Coordinate with local contact Priya S.</div><div class="task-meta"><span class="prio prio-l">Low</span><span class="task-date">Jul 1</span></div></div>
+              <div class="task-card"><div class="task-title">Write grant proposal — NEA digital preservation</div><div style="font-size:11px;color:var(--text2);margin-bottom:8px;line-height:1.5">$120k fund for AI-assisted archiving</div><div class="task-meta"><span class="prio prio-h">High</span><span class="task-date">May 30</span></div></div>
+            </div>
+            <div class="kanban-col">
+              <div class="kanban-col-head">
+                <div class="kanban-col-title"><div class="kanban-dot" style="background:var(--sky)"></div>In Progress</div>
+                <div class="kanban-count">4</div>
+              </div>
+              <div class="task-card"><div class="task-title">Train whisper model on Kannada audio</div><div style="font-size:11px;color:var(--text2);margin-bottom:8px;line-height:1.5">Fine-tuning on 800h dataset with Dr. Leila</div><div class="task-meta"><span class="prio prio-h">High</span><span class="task-date">May 25</span></div></div>
+              <div class="task-card"><div class="task-title">Design metadata schema v2.1</div><div style="font-size:11px;color:var(--text2);margin-bottom:8px;line-height:1.5">Extending Dublin Core for oral heritage specifics</div><div class="task-meta"><span class="prio prio-m">Medium</span><span class="task-date">May 28</span></div></div>
+              <div class="task-card"><div class="task-title">Partner onboarding — Smithsonian</div><div style="font-size:11px;color:var(--text2);margin-bottom:8px;line-height:1.5">API integration for shared archive access</div><div class="task-meta"><span class="prio prio-h">High</span><span class="task-date">May 22</span></div></div>
+            </div>
+            <div class="kanban-col">
+              <div class="kanban-col-head">
+                <div class="kanban-col-title"><div class="kanban-dot" style="background:var(--gold)"></div>Review</div>
+                <div class="kanban-count">2</div>
+              </div>
+              <div class="task-card"><div class="task-title">QA: Maya glyphs detection model</div><div style="font-size:11px;color:var(--text2);margin-bottom:8px;line-height:1.5">Final accuracy benchmarks before publication</div><div class="task-meta"><span class="prio prio-h">High</span><span class="task-date">May 20</span></div></div>
+              <div class="task-card"><div class="task-title">Peer review: Oral history paper draft</div><div style="font-size:11px;color:var(--text2);margin-bottom:8px;line-height:1.5">Co-authored with Prof. Ionescu for JDLP</div><div class="task-meta"><span class="prio prio-m">Medium</span><span class="task-date">May 21</span></div></div>
+            </div>
+            <div class="kanban-col">
+              <div class="kanban-col-head">
+                <div class="kanban-col-title"><div class="kanban-dot" style="background:var(--sage)"></div>Done</div>
+                <div class="kanban-count">7</div>
+              </div>
+              <div class="task-card"><div class="task-title">Digitise 2,400 Kondapalli toy photographs</div><div style="font-size:11px;color:var(--text2);margin-bottom:8px;line-height:1.5">Published to public archive with CC-BY license</div><div class="task-meta"><span class="prio prio-l">Done</span><span class="task-date">May 10</span></div></div>
+              <div class="task-card"><div class="task-title">UNESCO partnership MOU signed</div><div style="font-size:11px;color:var(--text2);margin-bottom:8px;line-height:1.5">3-year collaboration on intangible heritage AI</div><div class="task-meta"><span class="prio prio-l">Done</span><span class="task-date">May 5</span></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE: ARCHIVE -->
+      <div class="page" id="page-archive">
+        <div class="section">
+          <div class="section-head">
+            <div><div class="section-title">Cultural Archive</div><div class="section-sub">1,839 items preserved · Open access · CC-BY licensed</div></div>
+            <button class="btn btn-gold btn-sm" onclick="showToast('Upload dialog opened!','📤')">📤 Upload Item</button>
+          </div>
+          <div class="g4" style="margin-bottom:20px">
+            <div class="stat-card"><div class="stat-accent-bar" style="background:var(--gold)"></div><div class="label-xs">Audio</div><div class="stat-val">847</div><div class="stat-label">hours recorded</div></div>
+            <div class="stat-card"><div class="stat-accent-bar" style="background:var(--sky)"></div><div class="label-xs">Images</div><div class="stat-val">12.4K</div><div class="stat-label">photographs</div></div>
+            <div class="stat-card"><div class="stat-accent-bar" style="background:var(--sage)"></div><div class="label-xs">Documents</div><div class="stat-val">3,291</div><div class="stat-label">manuscripts & texts</div></div>
+            <div class="stat-card"><div class="stat-accent-bar" style="background:var(--ember)"></div><div class="label-xs">Video</div><div class="stat-val">214h</div><div class="stat-label">of footage</div></div>
+          </div>
+
+          <!-- UPLOAD ZONE -->
+          <div class="card" style="border-style:dashed;border-width:2px;text-align:center;padding:36px;cursor:pointer;transition:all .25s" onclick="showToast('Drop zone activated — select files to upload','📤')" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border2)'">
+            <div style="font-size:36px;margin-bottom:10px">📁</div>
+            <div style="font-family:'Fraunces',serif;font-size:16px;font-weight:500;color:var(--text);margin-bottom:5px">Drag & drop cultural items</div>
+            <div style="font-size:13px;color:var(--text2)">Audio, video, images, documents, PDFs · Max 2GB per item</div>
+            <div style="display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap">
+              <span class="tag">🎵 Audio</span><span class="tag">🎬 Video</span><span class="tag">📸 Images</span><span class="tag">📄 Documents</span><span class="tag">📜 PDFs</span>
+            </div>
+          </div>
+
+          <!-- RECENT ITEMS -->
+          <div style="margin-top:20px">
+            <div class="section-head"><div class="section-title" style="font-size:16px">Recent Archive Items</div></div>
+            <div style="display:flex;flex-direction:column;gap:9px" id="archive-list">
+              <!-- JS populated -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE: STORY FLOW -->
+      <div class="page" id="page-story">
+        <div class="section">
+          <div class="section-head">
+            <div><div class="section-title">Preservation Story Flow</div><div class="section-sub">From field to global access — the cultural preservation journey</div></div>
+          </div>
+
+          <div class="card-flat" style="padding:32px 24px;margin-bottom:20px">
+            <div style="display:flex;align-items:flex-start;gap:0;flex-wrap:nowrap;overflow-x:auto;padding-bottom:8px" id="story-flow">
+              <div class="story-step">
+                <div class="story-step-icon" style="background:rgba(196,91,58,.1);border-color:rgba(196,91,58,.3)">🌿</div>
+                <div class="story-label">Oral Story</div>
+                <div class="story-sub">Community custodian shares heritage knowledge</div>
+              </div>
+              <div class="story-connector"></div>
+              <div class="story-step">
+                <div class="story-step-icon" style="background:rgba(58,107,196,.1);border-color:rgba(58,107,196,.3)">🎙</div>
+                <div class="story-label">Field Recording</div>
+                <div class="story-sub">High-fidelity audio & video capture</div>
+              </div>
+              <div class="story-connector"></div>
+              <div class="story-step">
+                <div class="story-step-icon" style="background:rgba(196,151,58,.1);border-color:rgba(196,151,58,.3)">📁</div>
+                <div class="story-label">Archivist Cleanup</div>
+                <div class="story-sub">Noise reduction, metadata, cataloguing</div>
+              </div>
+              <div class="story-connector"></div>
+              <div class="story-step">
+                <div class="story-step-icon" style="background:rgba(58,124,92,.1);border-color:rgba(58,124,92,.3)">🤖</div>
+                <div class="story-label">AI Processing</div>
+                <div class="story-sub">Transcription, tagging, language detection</div>
+              </div>
+              <div class="story-connector"></div>
+              <div class="story-step">
+                <div class="story-step-icon" style="background:rgba(160,108,213,.1);border-color:rgba(160,108,213,.3)">🗄</div>
+                <div class="story-label">Digital Archive</div>
+                <div class="story-sub">Permanent, versioned, open-access storage</div>
+              </div>
+              <div class="story-connector"></div>
+              <div class="story-step">
+                <div class="story-step-icon" style="background:rgba(196,151,58,.15);border-color:var(--gold)">🌍</div>
+                <div class="story-label">Global Access</div>
+                <div class="story-sub">Public discovery, research, education</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ACTIVE STORY PROJECTS -->
+          <div class="g2">
+            <div class="card">
+              <div style="font-size:20px;margin-bottom:10px">🎵</div>
+              <div style="font-family:'Fraunces',serif;font-size:15px;margin-bottom:5px">Yakshagana Vocal Traditions</div>
+              <div style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.6">Karnataka coastal theatre form — 140 hours of master practitioner recordings, currently in AI processing stage.</div>
+              <div style="background:var(--mist2);border-radius:8px;height:6px;margin-bottom:6px;overflow:hidden">
+                <div style="height:100%;background:linear-gradient(90deg,var(--gold),var(--ember));width:68%;border-radius:8px"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3)"><span>AI Processing</span><span>68%</span></div>
+            </div>
+            <div class="card">
+              <div style="font-size:20px;margin-bottom:10px">🗿</div>
+              <div style="font-family:'Fraunces',serif;font-size:15px;margin-bottom:5px">Indus Valley Symbol Corpus</div>
+              <div style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.6">3D scanning + AI decipherment attempt on 400 undecoded proto-Elamite tablets from three museum collections.</div>
+              <div style="background:var(--mist2);border-radius:8px;height:6px;margin-bottom:6px;overflow:hidden">
+                <div style="height:100%;background:linear-gradient(90deg,var(--sky),var(--sage));width:34%;border-radius:8px"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3)"><span>Field Recording</span><span>34%</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE: ANALYTICS -->
+      <div class="page" id="page-analytics">
+        <div class="section">
+          <div class="section-head"><div class="section-title">Analytics</div><div class="section-sub">Your impact on cultural preservation globally</div></div>
+          <div class="g4" style="margin-bottom:20px">
+            <div class="stat-card"><div class="stat-accent-bar" style="background:var(--gold)"></div><div class="label-xs">Archive Views</div><div class="stat-val">48.2K</div><div class="stat-label">Total views</div><div class="stat-delta delta-up">↑ +2.4K this month</div></div>
+            <div class="stat-card"><div class="stat-accent-bar" style="background:var(--sage)"></div><div class="label-xs">Countries Reached</div><div class="stat-val">83</div><div class="stat-label">Countries</div><div class="stat-delta delta-up">↑ +7 new</div></div>
+            <div class="stat-card"><div class="stat-accent-bar" style="background:var(--sky)"></div><div class="label-xs">Downloads</div><div class="stat-val">3,847</div><div class="stat-label">Archive downloads</div><div class="stat-delta delta-up">↑ +312</div></div>
+            <div class="stat-card"><div class="stat-accent-bar" style="background:var(--ember)"></div><div class="label-xs">Citations</div><div class="stat-val">142</div><div class="stat-label">Academic citations</div><div class="stat-delta delta-up">↑ +18</div></div>
+          </div>
+
+          <div class="g2">
+            <div class="card-flat">
+              <div class="section-title" style="font-size:15px;margin-bottom:14px">Contribution Heatmap</div>
+              <div class="label-xs" style="margin-bottom:4px">Monthly archive contributions · 2024</div>
+              <div class="heatmap-grid" id="heatmap"></div>
+              <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:11px;color:var(--text3)">
+                <span>Jan</span><span>Mar</span><span>May</span><span>Jul</span><span>Sep</span><span>Nov</span>
+              </div>
+            </div>
+            <div class="card-flat">
+              <div class="section-title" style="font-size:15px;margin-bottom:14px">Discipline Participation</div>
+              <canvas id="discipline-chart" height="160"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE: REPUTATION -->
+      <div class="page" id="page-reputation">
+        <div class="section">
+          <div class="section-head"><div class="section-title">Reputation & Badges</div><div class="section-sub">Your community standing and contribution history</div></div>
+          <div class="g2">
+            <div class="card-flat">
+              <div style="text-align:center;padding:20px 0">
+                <div style="font-family:'Fraunces',serif;font-size:56px;font-weight:300;color:var(--gold);letter-spacing:-2px;line-height:1">924</div>
+                <div style="font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;font-family:'DM Mono',monospace;margin-top:4px">Trust Score</div>
+                <div style="background:var(--mist2);border-radius:99px;height:6px;margin:14px 0;overflow:hidden"><div style="height:100%;background:linear-gradient(90deg,var(--gold),var(--ember));width:92%"></div></div>
+                <div style="font-size:12px;color:var(--text2)">Top 8% of all contributors globally</div>
+              </div>
+              <hr>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;justify-content:space-between;font-size:13px"><span class="muted">Archive Impact</span><span style="color:var(--sage);font-weight:600">Excellent</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:13px"><span class="muted">Collaboration Score</span><span style="color:var(--gold);font-weight:600">94/100</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:13px"><span class="muted">Endorsements Received</span><span style="font-weight:600;color:var(--text)">47</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:13px"><span class="muted">Projects Completed</span><span style="font-weight:600;color:var(--text)">23</span></div>
+              </div>
+            </div>
+            <div class="card-flat">
+              <div class="section-title" style="font-size:15px;margin-bottom:14px">Earned Badges</div>
+              <div id="badges-list">
+                <div class="badge-item"><div class="badge-icon" style="background:rgba(196,151,58,.15)">🏛</div><div><div class="badge-name">Heritage Architect</div><div class="badge-desc">Contributed 1000+ archive items</div></div><span class="badge-pts">+150 pts</span></div>
+                <div class="badge-item"><div class="badge-icon" style="background:rgba(58,107,196,.12)">🤖</div><div><div class="badge-name">AI Pioneer</div><div class="badge-desc">First to apply ML to oral history archives</div></div><span class="badge-pts">+200 pts</span></div>
+                <div class="badge-item"><div class="badge-icon" style="background:rgba(58,124,92,.12)">🌿</div><div><div class="badge-name">Community Seed</div><div class="badge-desc">Onboarded 50+ collaborators</div></div><span class="badge-pts">+100 pts</span></div>
+                <div class="badge-item"><div class="badge-icon" style="background:rgba(196,91,58,.12)">🔥</div><div><div class="badge-name">Preservation Champion</div><div class="badge-desc">3 projects saved endangered languages</div></div><span class="badge-pts">+250 pts</span></div>
+                <div class="badge-item"><div class="badge-icon" style="background:rgba(160,108,213,.12)">🌍</div><div><div class="badge-name">Global Connector</div><div class="badge-desc">Collaborations across 4+ continents</div></div><span class="badge-pts">+175 pts</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE: PROFILE -->
+      <div class="page" id="page-profile">
+        <div class="section">
+          <div class="profile-banner" id="profile-banner" style="background:linear-gradient(135deg,var(--ink2) 0%,#1a2240 50%,var(--ink3) 100%)">
+            <div class="profile-banner-bg">🌍 🏛 🎨</div>
+            <div class="profile-avatar-pos" id="profile-avatar-main">A</div>
+          </div>
+          <div style="padding:0 0 20px;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px">
+            <div>
+              <div class="profile-name" id="display-name">Arjun Sharma</div>
+              <div class="profile-role">💻 Cultural Technologist · Bengaluru, India</div>
+              <div class="profile-bio" id="display-bio">Building AI tools for oral heritage preservation. NLP researcher at IISc. UNESCO Open Knowledge advocate. Previously: Smithsonian Digital Programs.</div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-outline btn-sm" onclick="showToast('Profile link copied!','🔗')">Share Profile</button>
+              <button class="btn btn-gold btn-sm" onclick="showEditProfile()">Edit Profile</button>
+            </div>
+          </div>
+
+          <div class="g4" style="margin-bottom:20px">
+            <div class="card-flat" style="text-align:center;padding:16px">
+              <div style="font-family:'Fraunces',serif;font-size:24px;font-weight:500;color:var(--text)">247</div>
+              <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px">Collaborations</div>
+            </div>
+            <div class="card-flat" style="text-align:center;padding:16px">
+              <div style="font-family:'Fraunces',serif;font-size:24px;font-weight:500;color:var(--text)">1,839</div>
+              <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px">Items Archived</div>
+            </div>
+            <div class="card-flat" style="text-align:center;padding:16px">
+              <div style="font-family:'Fraunces',serif;font-size:24px;font-weight:500;color:var(--text)">924</div>
+              <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px">Reputation</div>
+            </div>
+            <div class="card-flat" style="text-align:center;padding:16px">
+              <div style="font-family:'Fraunces',serif;font-size:24px;font-weight:500;color:var(--text)">23</div>
+              <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px">Projects</div>
+            </div>
+          </div>
+
+          <div class="g2">
+            <div class="card-flat">
+              <div class="section-title" style="font-size:15px;margin-bottom:12px">Skills & Expertise</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px">
+                <span class="tag tag-gold">NLP</span><span class="tag tag-gold">Machine Learning</span><span class="tag tag-sage">Audio Preservation</span><span class="tag tag-sage">Oral History</span><span class="tag tag-sky">Python</span><span class="tag tag-sky">TensorFlow</span><span class="tag">Sanskrit</span><span class="tag">Kannada</span><span class="tag tag-ember">Field Research</span><span class="tag">UNESCO Standards</span><span class="tag">Dublin Core</span><span class="tag tag-gold">AI Ethics</span>
+              </div>
+            </div>
+            <div class="card-flat">
+              <div class="section-title" style="font-size:15px;margin-bottom:12px">Languages Known</div>
+              <div style="display:flex;flex-direction:column;gap:9px">
+                <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13.5px;color:var(--text)">English</span><span class="tag tag-sage">Native</span></div>
+                <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13.5px;color:var(--text)">Hindi</span><span class="tag tag-gold">Fluent</span></div>
+                <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13.5px;color:var(--text)">Kannada</span><span class="tag tag-gold">Fluent</span></div>
+                <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13.5px;color:var(--text)">Sanskrit</span><span class="tag tag-sky">Intermediate</span></div>
+                <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13.5px;color:var(--text)">Tamil</span><span class="tag">Basic</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main-area -->
+</div><!-- /app-shell -->
+
+<!-- AI CHAT FAB -->
+<button class="chat-fab" id="chat-fab" onclick="toggleChat()">🤖</button>
+
+<!-- AI CHAT PANEL -->
+<div class="chat-panel" id="chat-panel">
+  <div class="chat-header">
+    <div class="chat-ai-dot"></div>
+    <div style="flex:1">
+      <div style="font-family:'Fraunces',serif;font-size:14px;font-weight:500;color:var(--text)">CulturaBridge AI</div>
+      <div style="font-size:11px;color:var(--text3)">Heritage Preservation Assistant</div>
+    </div>
+    <div class="icon-btn" style="width:28px;height:28px;font-size:14px" onclick="toggleChat()">✕</div>
+  </div>
+  <div class="chat-messages" id="chat-messages">
+    <div class="chat-msg ai">
+      <div class="chat-bubble">Hello Arjun! I'm your AI preservation assistant. I can help you find collaborators, suggest grants, analyse your projects, or explore cultural preservation strategies. What would you like to explore today?</div>
+      <div class="chat-time">Just now</div>
+    </div>
+    <div class="chat-msg ai">
+      <div class="chat-bubble">💡 <strong>Quick prompts:</strong> "Find me an AI engineer for my audio project" · "Suggest grants for oral history" · "What's missing in my Yakshagana project?"</div>
+      <div class="chat-time">Just now</div>
+    </div>
+  </div>
+  <div class="chat-input-wrap">
+    <input class="chat-input" id="chat-input" placeholder="Ask about preservation, grants, collaborators…" onkeydown="if(event.key==='Enter')sendChat()"/>
+    <button class="chat-send" onclick="sendChat()">→</button>
+  </div>
+</div>
+
+<!-- MATCH MODAL BACKDROP -->
+<div id="match-modal-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(8px);z-index:400;align-items:center;justify-content:center;padding:16px" onclick="closeMatchModal()">
+  <div id="match-modal" style="background:var(--cream);border:1px solid var(--border2);border-radius:22px;padding:28px;max-width:460px;width:100%;box-shadow:0 24px 70px rgba(0,0,0,.2)" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px">
+      <div id="modal-name" style="font-family:'Fraunces',serif;font-size:20px;font-weight:500;color:var(--text)"></div>
+      <div class="icon-btn" style="width:30px;height:30px;font-size:14px" onclick="closeMatchModal()">✕</div>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+// ── STATE ──
+let currentPage='home';
+let chatOpen=false;
+let isDark=false;
+let obStep=0;
+let selectedDiscipline='';
+let mapRendered=false;
+let chartRendered=false;
+let heatmapRendered=false;
+let archiveRendered=false;
+let communityRendered=false;
+
+// ── I18N ──
+const i18n={
+  en:{welcome:'Welcome back, Arjun',welcome_sub:'You have 7 new collaboration requests and 2 project updates',matchmaking:'AI Matchmaking',trending:'Trending Preservation Projects',active_partners:'Active partners',cultural_items:'Cultural items preserved',running_projects:'Ongoing preservation projects',trust_score:'Community trust score',suggested_matches:'Suggested Matches',activity_feed:'Activity Feed'},
+  es:{welcome:'Bienvenido, Arjun',welcome_sub:'Tienes 7 nuevas solicitudes de colaboración y 2 actualizaciones de proyecto',matchmaking:'Emparejamiento IA',trending:'Proyectos de Preservación Destacados',active_partners:'Socios activos',cultural_items:'Elementos culturales preservados',running_projects:'Proyectos en curso',trust_score:'Puntuación de confianza',suggested_matches:'Coincidencias Sugeridas',activity_feed:'Noticias de Actividad'},
+  hi:{welcome:'वापसी पर स्वागत है, Arjun',welcome_sub:'आपके पास 7 नए सहयोग अनुरोध हैं',matchmaking:'AI मिलान प्रणाली',trending:'प्रमुख संरक्षण परियोजनाएँ',active_partners:'सक्रिय साझेदार',cultural_items:'संरक्षित सांस्कृतिक वस्तुएँ',running_projects:'चालू परियोजनाएँ',trust_score:'सामुदायिक विश्वास स्कोर',suggested_matches:'सुझाए गए मिलान',activity_feed:'गतिविधि फ़ीड'},
+  kn:{welcome:'ಮರಳಿ ಸ್ವಾಗತ, Arjun',welcome_sub:'ನಿಮಗೆ 7 ಹೊಸ ಸಹಯೋಗ ವಿನಂತಿಗಳಿವೆ',matchmaking:'AI ಮ್ಯಾಚ್‌ಮೇಕಿಂಗ್',trending:'ಪ್ರಮುಖ ಸಂರಕ್ಷಣಾ ಯೋಜನೆಗಳು',active_partners:'ಸಕ್ರಿಯ ಪಾಲುದಾರರು',cultural_items:'ಸಂರಕ್ಷಿಸಿದ ಸಾಂಸ್ಕೃತಿಕ ವಸ್ತುಗಳು',running_projects:'ನಡೆಯುತ್ತಿರುವ ಯೋಜನೆಗಳು',trust_score:'ಸಮುದಾಯ ವಿಶ್ವಾಸ ಸ್ಕೋರ್',suggested_matches:'ಸೂಚಿಸಲಾದ ಹೊಂದಾಣಿಕೆಗಳು',activity_feed:'ಚಟುವಟಿಕೆ ಫೀಡ್'}
+};
+let lang='en';
+
+function setLang(l,btn){
+  lang=l;
+  document.querySelectorAll('.lang-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const t=i18n[l]||i18n.en;
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const key=el.getAttribute('data-i18n');
+    if(t[key])el.textContent=t[key];
+  });
+  showToast('Language changed to '+l.toUpperCase(),'🌐');
+}
+
+// ── NAVIGATION ──
+function navigate(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(n=>n.classList.remove('active'));
+  const titles={home:'Home Feed',match:'AI Matchmaking',map:'Ecosystem Map',community:'Community',projects:'Project Workspaces',archive:'Cultural Archive',story:'Preservation Story Flow',analytics:'Analytics',reputation:'Reputation & Badges',profile:'My Profile'};
+  document.getElementById('page-title').textContent=titles[page]||page;
+  const pageEl=document.getElementById('page-'+page);
+  if(pageEl){pageEl.classList.add('active');}
+  const navEl=document.getElementById('nav-'+page);
+  if(navEl)navEl.classList.add('active');
+  currentPage=page;
+  closeMobileSidebar();
+  // lazy-load
+  if(page==='map'&&!mapRendered){initMap();mapRendered=true;}
+  if(page==='analytics'){if(!heatmapRendered){initHeatmap();heatmapRendered=true;}if(!chartRendered){initDisciplineChart();chartRendered=true;}}
+  if(page==='archive'&&!archiveRendered){initArchive();archiveRendered=true;}
+  if(page==='community'&&!communityRendered){initCommunity();communityRendered=true;}
+  // animate match bars
+  if(page==='match'){
+    setTimeout(()=>{document.querySelectorAll('.match-bar-fill[data-target]').forEach(b=>{b.style.width=b.getAttribute('data-target')+'%';});},100);
+  }
+  window.scrollTo(0,0);
+}
+
+// ── MOBILE SIDEBAR ──
+function openMobileSidebar(){
+  document.getElementById('sidebar').classList.add('mobile-open');
+  document.getElementById('sb-overlay').classList.add('active');
+}
+function closeMobileSidebar(){
+  document.getElementById('sidebar').classList.remove('mobile-open');
+  document.getElementById('sb-overlay').classList.remove('active');
+}
+
+// ── THEME ──
+function toggleTheme(){
+  isDark=!isDark;
+  document.body.classList.toggle('dark',isDark);
+  document.querySelector('[onclick="toggleTheme()"]').textContent=isDark?'☀️':'🌙';
+  showToast(isDark?'Dark mode on':'Light mode on',isDark?'🌙':'☀️');
+}
+
+// ── ONBOARDING ──
+function obNext(){
+  if(obStep<3){
+    document.getElementById('ob'+obStep).classList.remove('active');
+    obStep++;
+    document.getElementById('ob'+obStep).classList.add('active');
+    document.querySelectorAll('.ob-step-dot').forEach((d,i)=>{
+      d.classList.toggle('done',i<obStep);
+      d.classList.toggle('active',i===obStep);
+    });
+  }
+}
+function pickDiscipline(el,icon,label){
+  document.querySelectorAll('.ob-chip').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedDiscipline=label;
+  document.getElementById('sb-urole').textContent=icon+' '+label;
+}
+function toggleTag(el){
+  el.classList.toggle('tag-gold');
+  el.classList.toggle('tag');
+}
+function closeOnboard(){
+  const o=document.getElementById('onboard');
+  o.style.opacity='0';o.style.transform='scale(.97)';o.style.transition='all .4s';
+  setTimeout(()=>o.style.display='none',400);
+  showToast('Welcome to CulturaBridge! 🌍','🎉');
+}
+
+// ── TOASTS ──
+function showToast(msg,icon='ℹ️'){
+  const wrap=document.getElementById('toast-wrap');
+  const t=document.createElement('div');
+  t.className='toast';
+  t.innerHTML=`<span style="margin-right:7px">${icon}</span>${msg}`;
+  wrap.appendChild(t);
+  setTimeout(()=>{t.style.opacity='0';t.style.transform='translateX(20px)';t.style.transition='all .3s';setTimeout(()=>t.remove(),300);},3000);
+}
+
+// ── CHAT ──
+function toggleChat(){
+  chatOpen=!chatOpen;
+  document.getElementById('chat-panel').classList.toggle('open',chatOpen);
+  document.getElementById('chat-fab').style.display=chatOpen?'none':'flex';
+}
+
+const aiResponses=[
+  "Based on your profile, I'd suggest connecting with sound archivists working on South Asian oral traditions. The Sangeet Natak Akademi has an open collaboration call right now.",
+  "For your audio preservation project, consider applying to the British Library's Endangered Archives Programme — up to £120,000, deadline September 30th. Your work on Yakshagana would be highly competitive.",
+  "Your Yakshagana project seems to be missing a community liaison. I'd recommend onboarding a local custodian from the coastal Karnataka community to ensure cultural accuracy and community consent.",
+  "The NLP model you're building could benefit from collaboration with Dr. Leila Nkosi's speech-to-text work in East Africa — there are interesting cross-linguistic transfer learning opportunities.",
+  "I notice your archive lacks systematic provenance metadata. Adding PREMIS-compliant records would significantly improve discoverability and academic credibility.",
+  "For grants, I'd prioritise: 1) NEA Preservation & Access ($120K), 2) Mellon Foundation Digital Humanities ($200K), 3) Google.org AI for Social Good ($50K). Your project scores well on all three criteria.",
+];
+let aiIdx=0;
+
+function sendChat(){
+  const inp=document.getElementById('chat-input');
+  const msgs=document.getElementById('chat-messages');
+  const text=inp.value.trim();
+  if(!text)return;
+  inp.value='';
+  // User message
+  const userEl=document.createElement('div');
+  userEl.className='chat-msg user';
+  const now=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  userEl.innerHTML=`<div class="chat-bubble">${text}</div><div class="chat-time">${now}</div>`;
+  msgs.appendChild(userEl);
+  // Typing
+  const typingEl=document.createElement('div');
+  typingEl.className='chat-msg ai';
+  typingEl.innerHTML=`<div class="chat-bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
+  msgs.appendChild(typingEl);
+  msgs.scrollTop=msgs.scrollHeight;
+  setTimeout(()=>{
+    typingEl.remove();
+    const aiEl=document.createElement('div');
+    aiEl.className='chat-msg ai';
+    const resp=aiResponses[aiIdx%aiResponses.length];aiIdx++;
+    aiEl.innerHTML=`<div class="chat-bubble">${resp}</div><div class="chat-time">${now}</div>`;
+    msgs.appendChild(aiEl);
+    msgs.scrollTop=msgs.scrollHeight;
+  },1400+Math.random()*600);
+}
+
+// ── MATCH MODAL ──
+function openMatchModal(name,role,loc,pct){
+  const bg=document.getElementById('match-modal-bg');
+  document.getElementById('modal-name').textContent=name;
+  document.getElementById('modal-body').innerHTML=`
+    <div style="font-size:13px;color:var(--text2);margin-bottom:14px">${role}</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <div class="match-pct" style="font-size:32px">${pct}%</div>
+      <div><div style="font-size:13px;color:var(--text2)">Collaboration synergy</div><div class="match-bar-track" style="width:200px;margin-top:5px"><div class="match-bar-fill" style="width:${pct}%"></div></div></div>
+    </div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.65;margin-bottom:14px;padding:12px;background:var(--surface);border-radius:10px">💡 This match is strong because you share complementary skills in cultural documentation and technology. High potential for joint grant applications.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-gold btn-sm" onclick="showToast('Connection request sent!','✨');closeMatchModal()">Connect</button>
+      <button class="btn btn-outline btn-sm" onclick="showToast('Message thread opened!','💬');closeMatchModal()">Send Message</button>
+      <button class="btn btn-ghost btn-sm" onclick="showToast('Invite sent for project!','📂');closeMatchModal()">Invite to Project</button>
+    </div>`;
+  bg.style.display='flex';
+}
+function closeMatchModal(){document.getElementById('match-modal-bg').style.display='none';}
+
+// ── MATCH FILTERING ──
+function filterMatches(discipline){
+  showToast('Filtered by: '+(discipline||'All'),'🔍');
+}
+function refreshMatches(){
+  showToast('AI refreshing match recommendations…','✨');
+  setTimeout(()=>showToast('Fresh matches loaded! Found 3 new high-synergy partners','🎯'),1800);
+}
+
+// ── REACTIONS ──
+function reactFeed(btn,emoji){
+  btn.classList.toggle('reacted');
+  const parts=btn.textContent.split(' ');
+  const count=parseInt(parts[1])||0;
+  btn.innerHTML=emoji+' '+(btn.classList.contains('reacted')?count+1:count-1);
+}
+
+// ── SEARCH ──
+function handleSearch(val){
+  if(val.length>2)showToast('Searching for "'+val+'"…','🔍');
+}
+
+// ── ECOSYSTEM MAP (D3) ──
+function initMap(){
+  const container=document.getElementById('map-container');
+  const W=container.offsetWidth||700;
+  const H=420;
+  const svg=d3.select('#map-svg').attr('viewBox',`0 0 ${W} ${H}`).attr('width','100%').attr('height','100%');
+  svg.selectAll('*').remove();
+
+  const types=[
+    {type:'artist',color:'#c4973a',label:'Artist'},
+    {type:'historian',color:'#3a6bc4',label:'Historian'},
+    {type:'tech',color:'#3a7c5c',label:'Technologist'},
+    {type:'archivist',color:'#c45b3a',label:'Archivist'},
+    {type:'policy',color:'#a06cd5',label:'Policymaker'},
+  ];
+
+  const nodes=[];
+  const typeList=['artist','historian','tech','archivist','policy'];
+  const typeColors={'artist':'#c4973a','historian':'#3a6bc4','tech':'#3a7c5c','archivist':'#c45b3a','policy':'#a06cd5'};
+  const names=[
+    'Leila N','Mihail I','Amara D','Suki W','Reza T','Kavya R','James O','Priya S','Chen L','Fatima A',
+    'Omar B','Elena V','Raj K','Sara M','Tom H','Yuki T','Anya P','Carlos M','Aisha K','David L',
+    'Meera S','Felix W','Zara A','Ahmed H','Nina C','Marco R','Lily T','Kwame A','Sofia B','Pierre D'
+  ];
+  for(let i=0;i<30;i++){
+    const t=typeList[i%5];
+    nodes.push({id:i,name:names[i%names.length],type:t,color:typeColors[t],r:i<5?16:i<15?11:8});
+  }
+
+  const links=[];
+  for(let i=0;i<nodes.length;i++){
+    for(let j=i+1;j<nodes.length;j++){
+      if(Math.random()<0.18)links.push({source:i,target:j});
+    }
+  }
+
+  const sim=d3.forceSimulation(nodes)
+    .force('link',d3.forceLink(links).id(d=>d.id).distance(60))
+    .force('charge',d3.forceManyBody().strength(-120))
+    .force('center',d3.forceCenter(W/2,H/2))
+    .force('collision',d3.forceCollide(d=>d.r+6));
+
+  const defs=svg.append('defs');
+  types.forEach(t=>{
+    const g=defs.append('radialGradient').attr('id','grad-'+t.type).attr('cx','35%').attr('cy','35%');
+    g.append('stop').attr('offset','0%').attr('stop-color',d3.color(t.color).brighter(.6));
+    g.append('stop').attr('offset','100%').attr('stop-color',t.color);
+  });
+
+  const link=svg.append('g').selectAll('line').data(links).enter().append('line')
+    .attr('stroke',isDark?'rgba(255,255,255,.1)':'rgba(0,0,0,.08)')
+    .attr('stroke-width',1);
+
+  const node=svg.append('g').selectAll('g').data(nodes).enter().append('g')
+    .attr('class','map-node')
+    .call(d3.drag().on('start',dragStart).on('drag',dragged).on('end',dragEnd));
+
+  node.append('circle')
+    .attr('r',d=>d.r)
+    .attr('fill',d=>`url(#grad-${d.type})`)
+    .attr('stroke',d=>d.color)
+    .attr('stroke-width',1.5)
+    .attr('stroke-opacity',.7);
+
+  node.filter(d=>d.r>=11).append('text')
+    .text(d=>d.name.split(' ')[0])
+    .attr('text-anchor','middle').attr('dy','0.35em')
+    .attr('font-size',d=>d.r>=16?9:8)
+    .attr('fill',isDark?'rgba(255,255,255,.9)':'rgba(0,0,0,.8)')
+    .style('pointer-events','none');
+
+  node.on('mouseover',function(event,d){
+    d3.select(this).select('circle').transition().duration(150).attr('r',d.r*1.35);
+    showToast(d.name+' · '+d.type,'👤');
+  }).on('mouseout',function(event,d){
+    d3.select(this).select('circle').transition().duration(150).attr('r',d.r);
+  }).on('click',function(event,d){
+    openMatchModal(d.name,d.type+' · Global',d.type,Math.floor(70+Math.random()*25));
+  });
+
+  sim.on('tick',()=>{
+    link.attr('x1',d=>clamp(d.source.x,20,W-20)).attr('y1',d=>clamp(d.source.y,20,H-20))
+       .attr('x2',d=>clamp(d.target.x,20,W-20)).attr('y2',d=>clamp(d.target.y,20,H-20));
+    node.attr('transform',d=>`translate(${clamp(d.x,20,W-20)},${clamp(d.y,20,H-20)})`);
+  });
+
+  function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v));}
+  function dragStart(event,d){if(!event.active)sim.alphaTarget(.3).restart();d.fx=d.x;d.fy=d.y;}
+  function dragged(event,d){d.fx=event.x;d.fy=event.y;}
+  function dragEnd(event,d){if(!event.active)sim.alphaTarget(0);d.fx=null;d.fy=null;}
+}
+
+function filterMap(type){
+  showToast('Filter: '+type,'🔍');
+}
+
+// ── HEATMAP ──
+function initHeatmap(){
+  const grid=document.getElementById('heatmap');
+  if(!grid)return;
+  const intensities=[2,3,1,4,5,3,2,4,3,5,2,3,3,2,4,5,3,2,1,4,5,4,3,2,3,4,5,2,3,4,4,5,3,2,1,4,5,3,4,5,3,2,4,5,4,3,2,3,1,4,5,4,3,4,5,4,3,2,1,4,5,5,4,3,2,4,5,4,3,2,4,5,3,4,5,4,3,2,3,4,5,2,3,4,4,5,5,4,3,2,1,4,5,4,3,4,5,4,3,2,1,4,5,5,4,3,2,4,5,4,3,2,4,5,3,4,5,4,3,2,3,4,5,2,3,4,4,5,5,4,3,2,1,4,5,4,3,4,5,4,3,2,4];
+  const colors=['rgba(196,151,58,.1)','rgba(196,151,58,.25)','rgba(196,151,58,.4)','rgba(196,151,58,.65)','rgba(196,151,58,.9)'];
+  intensities.slice(0,144).forEach(v=>{
+    const c=document.createElement('div');
+    c.className='heatmap-cell';
+    c.style.background=colors[v-1]||colors[0];
+    c.title='Contributions: '+v;
+    grid.appendChild(c);
+  });
+}
+
+// ── DISCIPLINE CHART ──
+function initDisciplineChart(){
+  const canvas=document.getElementById('discipline-chart');
+  if(!canvas||!window.Chart)return;
+  if(canvas._chartInst){canvas._chartInst.destroy();}
+  const dark=isDark;
+  const c=new Chart(canvas,{
+    type:'doughnut',
+    data:{
+      labels:['Historians','AI Engineers','Archivists','Artists','Policymakers','Researchers'],
+      datasets:[{data:[24,19,18,16,13,10],backgroundColor:['#3a6bc4','#3a7c5c','#c45b3a','#c4973a','#a06cd5','#e87a5c'],borderWidth:0,hoverOffset:6}]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:true,
+      plugins:{legend:{position:'right',labels:{color:dark?'#9aa0b8':'#4a5165',font:{family:'Outfit',size:12},boxWidth:12,padding:10}}}
+    }
+  });
+  canvas._chartInst=c;
+}
+
+// ── ARCHIVE ──
+function initArchive(){
+  const list=document.getElementById('archive-list');
+  if(!list)return;
+  const items=[
+    {icon:'🎵',name:'Yakshagana Thodayamangalam — Master Shivarama Hegde',type:'Audio',size:'847 MB',date:'2024-05-10',tags:['Karnataka','Ritual Music']},
+    {icon:'📸',name:'Kondapalli Toy Artisans — Field Documentation Set #3',type:'Image Set',size:'2.4 GB',date:'2024-05-08',tags:['AP','Craft']},
+    {icon:'📄',name:'Oral history transcripts — Coorg hunters\' narrative cycle',type:'Document',size:'12 MB',date:'2024-05-01',tags:['Karnataka','Oral']},
+    {icon:'🎬',name:'Kuchipudi Varnam performance — Kalakshetra 2023',type:'Video',size:'3.8 GB',date:'2024-04-28',tags:['Telugu','Dance']},
+    {icon:'📜',name:'Tamil Sangam poetry manuscripts — Digitised from GOML',type:'PDF',size:'340 MB',date:'2024-04-20',tags:['Tamil','Literature']},
+  ];
+  list.innerHTML=items.map(item=>`
+    <div class="card" style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer" onclick="showToast('Opening ${item.name}','${item.icon}')">
+      <div style="font-size:26px;flex-shrink:0">${item.icon}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13.5px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${item.name}</div>
+        <div style="font-size:11.5px;color:var(--text3);margin-top:2px;display:flex;gap:10px;flex-wrap:wrap">
+          <span>${item.type}</span><span>${item.size}</span><span>${item.date}</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end">
+        ${item.tags.map(t=>`<span class="tag" style="font-size:10.5px;padding:2px 7px">${t}</span>`).join('')}
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();showToast('Downloading…','⬇️')">↓</button>
+        <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();showToast('Link copied!','🔗')">🔗</button>
+      </div>
+    </div>`).join('');
+}
+
+// ── COMMUNITY ──
+function initCommunity(){
+  const grid=document.getElementById('community-grid');
+  if(!grid)return;
+  const people=[
+    {name:'Dr. Leila Nkosi',role:'AI Engineer',loc:'Cape Town',avatar:'L',pct:91,bg:'linear-gradient(135deg,#c4973a,#c45b3a)'},
+    {name:'Prof. Mihail Ionescu',role:'Historian',loc:'Bucharest',avatar:'M',pct:87,bg:'linear-gradient(135deg,#3a6bc4,#3a7c5c)'},
+    {name:'Amara Diallo',role:'Archivist',loc:'Dakar',avatar:'A',pct:84,bg:'linear-gradient(135deg,#c45b3a,#e87a5c)'},
+    {name:'Suki Watanabe',role:'Photographer',loc:'Tokyo',avatar:'S',pct:79,bg:'linear-gradient(135deg,#3a7c5c,#3a6bc4)'},
+    {name:'Dr. Reza Tehrani',role:'Policymaker',loc:'Tehran',avatar:'R',pct:76,bg:'linear-gradient(135deg,#3a6bc4,#c45b3a)'},
+    {name:'Kavya Reddy',role:'Researcher',loc:'Hyderabad',avatar:'K',pct:73,bg:'linear-gradient(135deg,#a06cd5,#3a6bc4)'},
+    {name:'James Osei',role:'Historian',loc:'Accra',avatar:'J',pct:70,bg:'linear-gradient(135deg,#c4973a,#3a7c5c)'},
+    {name:'Priya Subramaniam',role:'Archivist',loc:'Chennai',avatar:'P',pct:68,bg:'linear-gradient(135deg,#a06cd5,#c45b3a)'},
+    {name:'Chen Lin',role:'Technologist',loc:'Beijing',avatar:'C',pct:65,bg:'linear-gradient(135deg,#3a6bc4,#a06cd5)'},
+  ];
+  grid.innerHTML=people.map(p=>`
+    <div class="user-card" onclick="openMatchModal('${p.name}','${p.role} · ${p.loc}','${p.loc}','${p.pct}')">
+      <div class="user-card-banner"><div style="position:absolute;inset:0;background:${p.bg};opacity:.8"></div></div>
+      <div class="user-card-body">
+        <div class="user-card-avatar">${p.avatar}</div>
+        <div class="user-card-name">${p.name}</div>
+        <div class="user-card-role">${p.role} · ${p.loc}</div>
+        <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:10px">
+          <span class="tag-gold" style="font-size:10.5px;padding:2px 8px;border-radius:99px;border:1px solid rgba(196,151,58,.3);background:rgba(196,151,58,.1);color:var(--gold)">${p.pct}% match</span>
+        </div>
+        <div style="display:flex;gap:6px;justify-content:center">
+          <button class="btn btn-gold btn-xs" onclick="event.stopPropagation();showToast('Connected with ${p.name}!','✨')">Connect</button>
+          <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();showToast('Message sent!','💬')">Message</button>
+        </div>
+      </div>
+      <div class="user-stat-row">
+        <div class="user-stat-val text-center"><div class="user-stat-val">${Math.floor(50+Math.random()*200)}</div><div class="user-stat-key">Collabs</div></div>
+        <div><div class="user-stat-val">${Math.floor(200+Math.random()*800)}</div><div class="user-stat-key">Archived</div></div>
+        <div><div class="user-stat-val">${Math.floor(600+Math.random()*400)}</div><div class="user-stat-key">Score</div></div>
+      </div>
+    </div>`).join('');
+}
+
+// ── PROFILE EDIT ──
+function showEditProfile(){
+  const name=prompt('Update your name:',document.getElementById('display-name').textContent);
+  if(name){document.getElementById('display-name').textContent=name;document.querySelector('.sb-uname').textContent=name;showToast('Profile updated!','✅');}
+}
+
+// ── LOAD CHART.JS ──
+(function(){
+  if(window.Chart)return;
+  const s=document.createElement('script');
+  s.src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js';
+  s.onload=()=>{if(currentPage==='analytics')initDisciplineChart();};
+  document.head.appendChild(s);
+})();
+
+// ── INIT ANIMATIONS ──
+window.addEventListener('load',()=>{
+  // Animate match bars on home page
+  setTimeout(()=>{
+    document.querySelectorAll('.match-bar-fill:not([data-target])').forEach(b=>{
+      const w=b.style.width;b.style.width='0%';
+      setTimeout(()=>{b.style.width=w;},100);
+    });
+  },500);
+});
+
+// ── INIT ──
+document.addEventListener('DOMContentLoaded',()=>{
+  // Check for system dark preference
+  if(window.matchMedia('(prefers-color-scheme: dark)').matches){
+    isDark=true;document.body.classList.add('dark');
+    document.querySelector('[onclick="toggleTheme()"]').textContent='☀️';
+  }
+});
+</script>
+</body>
+</html>
