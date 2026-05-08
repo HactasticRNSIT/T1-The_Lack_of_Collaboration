@@ -1318,45 +1318,6 @@ function toggleChat(){
   document.getElementById('chat-fab').style.display=chatOpen?'none':'flex';
 }
 
-const aiResponses=[
-  "Based on your profile, I'd suggest connecting with sound archivists working on South Asian oral traditions. The Sangeet Natak Akademi has an open collaboration call right now.",
-  "For your audio preservation project, consider applying to the British Library's Endangered Archives Programme — up to £120,000, deadline September 30th. Your work on Yakshagana would be highly competitive.",
-  "Your Yakshagana project seems to be missing a community liaison. I'd recommend onboarding a local custodian from the coastal Karnataka community to ensure cultural accuracy and community consent.",
-  "The NLP model you're building could benefit from collaboration with Dr. Leila Nkosi's speech-to-text work in East Africa — there are interesting cross-linguistic transfer learning opportunities.",
-  "I notice your archive lacks systematic provenance metadata. Adding PREMIS-compliant records would significantly improve discoverability and academic credibility.",
-  "For grants, I'd prioritise: 1) NEA Preservation & Access ($120K), 2) Mellon Foundation Digital Humanities ($200K), 3) Google.org AI for Social Good ($50K). Your project scores well on all three criteria.",
-];
-let aiIdx=0;
-
-function sendChat(){
-  const inp=document.getElementById('chat-input');
-  const msgs=document.getElementById('chat-messages');
-  const text=inp.value.trim();
-  if(!text)return;
-  inp.value='';
-  // User message
-  const userEl=document.createElement('div');
-  userEl.className='chat-msg user';
-  const now=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-  userEl.innerHTML=`<div class="chat-bubble">${text}</div><div class="chat-time">${now}</div>`;
-  msgs.appendChild(userEl);
-  // Typing
-  const typingEl=document.createElement('div');
-  typingEl.className='chat-msg ai';
-  typingEl.innerHTML=`<div class="chat-bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
-  msgs.appendChild(typingEl);
-  msgs.scrollTop=msgs.scrollHeight;
-  setTimeout(()=>{
-    typingEl.remove();
-    const aiEl=document.createElement('div');
-    aiEl.className='chat-msg ai';
-    const resp=aiResponses[aiIdx%aiResponses.length];aiIdx++;
-    aiEl.innerHTML=`<div class="chat-bubble">${resp}</div><div class="chat-time">${now}</div>`;
-    msgs.appendChild(aiEl);
-    msgs.scrollTop=msgs.scrollHeight;
-  },1400+Math.random()*600);
-}
-
 // ── MATCH MODAL ──
 function openMatchModal(name,role,loc,pct){
   const bg=document.getElementById('match-modal-bg');
@@ -1633,5 +1594,6 @@ document.addEventListener('DOMContentLoaded',()=>{
   }
 });
 </script>
+<script src="ai.js"></script>
 </body>
 </html>
