@@ -82,14 +82,14 @@ T1-The_Lack_of_Collaboration/
 
 ## 👥 Team Crewtrix
 
-| Member | Role |
-|--------|------|
-| **Satvik** | Team Member |
-| **Pushkar** | Team Member |
-| **Prasad** | Team Member |
-| **Yashmith** | Team Member |
-| **Pavani** | Team Member |
-| **Yavanika** | Team Member |
+| Member |
+|----------------|
+| **Satvik** | 
+| **Pushkar** | 
+| **Prasad** | 
+| **Yashmith** |
+| **Pavani** | 
+| **Yavanika** | 
 
 ---
 
