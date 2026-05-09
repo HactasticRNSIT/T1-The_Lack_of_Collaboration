@@ -66,7 +66,7 @@ if (logOutBtn) {
         const { error } = await supabaseClient.auth.signOut();
         if (!error) {
             // Redirect back to login page after logging out
-            window.location.href = 'login.html';
+            window.location.href = 'index.html';
         }
     });
 }
