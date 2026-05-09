@@ -1,2 +1,0 @@
-# the judge from rv, did partiality ,she didn't even listen to ur solution or even see our website, which was our solution and she just wanted to tell her thoughts.
-# After she finished talking she was just like next team, she didn't ask us anything or even listen to wt we had to say
